@@ -1,0 +1,87 @@
+name: Avisos de expiración IHC Tool™
+
+on:
+  schedule:
+    - cron: '0 10 * * *'  # Todos los días a las 10:00 AM Chile (UTC-3 = 13:00 UTC)
+  workflow_dispatch:        # También permite ejecutar manualmente
+
+jobs:
+  send-alerts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enviar avisos de expiración
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          pip install supabase requests --quiet
+
+          python3 << 'EOF'
+          import os, requests
+          from datetime import date, timedelta
+          from supabase import create_client
+
+          sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_ROLE_KEY"])
+          SEND_URL = os.environ["SUPABASE_URL"] + "/functions/v1/send-email"
+          ANON_KEY = os.environ["SUPABASE_ANON_KEY"]
+          hoy = date.today()
+
+          # Obtener licencias activas con datos de cliente y plan
+          lics = sb.table("licencias").select(
+              "id, plan_id, fecha_expiracion, clientes(contacto_email, contacto_nombre, razon_social), planes(nombre)"
+          ).eq("estado", "activa").execute().data or []
+
+          hitos = {30: "expiracion_30", 15: "expiracion_15", 0: "expiracion_0"}
+          enviados = 0
+
+          for l in lics:
+              fecha_exp = date.fromisoformat(str(l["fecha_expiracion"])[:10])
+              dias_restantes = (fecha_exp - hoy).days
+              template = hitos.get(dias_restantes)
+              if not template:
+                  continue
+
+              # Verificar que no se haya enviado ya este aviso hoy
+              evento_key = f"aviso_{dias_restantes}d"
+              ya_enviado = sb.table("eventos_licencia").select("id").eq(
+                  "licencia_id", l["id"]
+              ).eq("tipo", evento_key).gte(
+                  "created_at", str(hoy)
+              ).execute().data
+
+              if ya_enviado:
+                  print(f"Ya enviado hoy para licencia {l['id'][:8]}")
+                  continue
+
+              cliente = l.get("clientes") or {}
+              to_email = cliente.get("contacto_email")
+              to_name = cliente.get("contacto_nombre") or cliente.get("razon_social","Cliente")
+              plan_nombre = (l.get("planes") or {}).get("nombre", l["plan_id"].capitalize())
+
+              if not to_email:
+                  continue
+
+              res = requests.post(SEND_URL, json={
+                  "template": template,
+                  "to_email": to_email,
+                  "to_name": to_name,
+                  "data": {
+                      "plan": plan_nombre,
+                      "fecha_expiracion": fecha_exp.strftime("%d %b %Y")
+                  }
+              }, headers={"apikey": ANON_KEY, "Content-Type": "application/json"}, timeout=10)
+
+              if res.ok:
+                  sb.table("eventos_licencia").insert({
+                      "licencia_id": l["id"],
+                      "tipo": evento_key,
+                      "detalle": {"dias_restantes": dias_restantes, "email_destino": to_email}
+                  }).execute()
+                  enviados += 1
+                  print(f"✅ Aviso {dias_restantes}d enviado a {to_email}")
+              else:
+                  print(f"❌ Error enviando a {to_email}: {res.text}")
+
+          print(f"\nTotal enviados: {enviados}")
+          EOF
