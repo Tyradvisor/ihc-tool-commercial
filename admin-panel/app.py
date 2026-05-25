@@ -304,6 +304,35 @@ def seccion_clientes():
         df["Fecha Alta"] = df["Fecha Alta"].apply(lambda x: str(x)[:10] if x else "")
         st.dataframe(df, use_container_width=True, hide_index=True)
 
+        st.markdown("---")
+        st.subheader("Gestionar cliente")
+        cliente_names = {f"{c['razon_social']} ({c['contacto_email']})": c for c in clientes}
+        sel = st.selectbox("Selecciona cliente", list(cliente_names.keys()))
+        cliente_sel = cliente_names[sel]
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("📝 Ver detalles", use_container_width=True):
+                st.info(f"""
+                **Razón Social:** {cliente_sel.get('razon_social')}
+                **RUT:** {cliente_sel.get('rut') or '—'}
+                **Email:** {cliente_sel.get('contacto_email')}
+                **Contacto:** {cliente_sel.get('contacto_nombre') or '—'}
+                **Teléfono:** {cliente_sel.get('contacto_telefono') or '—'}
+                **Industria:** {cliente_sel.get('industria') or '—'}
+                **Notas:** {cliente_sel.get('notas') or '—'}
+                """)
+        with col2:
+            if st.button("🗑️ Eliminar cliente", use_container_width=True, type="secondary"):
+                confirmado = st.checkbox(f"Confirmo eliminar '{cliente_sel['razon_social']}'")
+                if confirmado:
+                    try:
+                        sb.table("clientes").delete().eq("id", cliente_sel["id"]).execute()
+                        st.success(f"✅ Cliente eliminado.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error: {e}")
+
     st.divider()
 
     # Nuevo cliente
