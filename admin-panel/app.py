@@ -24,18 +24,176 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ── CSS ───────────────────────────────────────────────────────
+# ── CSS PROFESIONAL ───────────────────────────────────────────
 st.markdown("""
 <style>
-  .main { background: #F1F5F9; }
-  .metric-card {
-    background: white; border-radius: 10px; padding: 16px 20px;
-    border: 1px solid #E2E8F0; margin-bottom: 8px;
+  * { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+  .main {
+    background: linear-gradient(135deg, #0F1419 0%, #1A2332 100%);
+    color: #E2E8F0;
   }
-  .badge-activa  { background:#D1FAE5; color:#065F46; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:600; }
-  .badge-expirada{ background:#FEE2E2; color:#991B1B; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:600; }
-  .badge-suspendida{ background:#FEF3C7; color:#92400E; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:600; }
-  .badge-revocada{ background:#F3F4F6; color:#374151; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:600; }
+
+  /* ── LOGIN ── */
+  .login-container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 16px;
+    padding: 48px 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 180, 216, 0.1);
+  }
+
+  .login-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .login-title {
+    font-size: 32px;
+    font-weight: 900;
+    color: #0A1628;
+    margin: 0;
+    letter-spacing: -0.5px;
+  }
+
+  .login-subtitle {
+    font-size: 13px;
+    color: #64748B;
+    margin-top: 6px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    background: linear-gradient(90deg, #0A1628 0%, #0D1F2D 100%);
+    padding: 16px 24px;
+    border-bottom: 1px solid #00B4D8;
+    margin-bottom: 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 180, 216, 0.1);
+  }
+
+  /* ── METRIC CARDS ── */
+  .metric-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border-radius: 12px;
+    padding: 20px 24px;
+    border: 1px solid rgba(0, 180, 216, 0.2);
+    transition: all 0.3s ease;
+    margin-bottom: 12px;
+  }
+
+  .metric-card:hover {
+    background: linear-gradient(135deg, rgba(0, 180, 216, 0.15) 0%, rgba(0, 180, 216, 0.05) 100%);
+    border-color: rgba(0, 180, 216, 0.4);
+    transform: translateY(-2px);
+  }
+
+  .metric-label {
+    font-size: 12px;
+    color: #94A3B8;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .metric-value {
+    font-size: 28px;
+    color: #00B4D8;
+    font-weight: 700;
+  }
+
+  /* ── BADGES ── */
+  .badge-activa {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10B981;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    display: inline-block;
+  }
+
+  .badge-expirada {
+    background: rgba(239, 68, 68, 0.2);
+    color: #EF4444;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    display: inline-block;
+  }
+
+  .badge-suspendida {
+    background: rgba(245, 158, 11, 0.2);
+    color: #F59E0B;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    display: inline-block;
+  }
+
+  .badge-revocada {
+    background: rgba(107, 114, 128, 0.2);
+    color: #9CA3AF;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid rgba(107, 114, 128, 0.3);
+    display: inline-block;
+  }
+
+  /* ── HEADERS ── */
+  .stMarkdown h1 { color: #00B4D8 !important; font-weight: 800 !important; }
+  .stMarkdown h2 { color: #E2E8F0 !important; font-weight: 700 !important; }
+  .stMarkdown h3 { color: #CBD5E1 !important; font-weight: 700 !important; }
+
+  /* ── DATAFRAME ── */
+  .stDataFrame { background: rgba(255, 255, 255, 0.05) !important; border-radius: 8px !important; }
+
+  /* ── BUTTONS ── */
+  .stButton > button {
+    background: linear-gradient(135deg, #00B4D8 0%, #0090B8 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .stButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 180, 216, 0.4);
+  }
+
+  /* ── INPUTS ── */
+  .stTextInput > div > div > input,
+  .stTextArea > div > div > textarea,
+  .stSelectbox > div > div > select {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(0, 180, 216, 0.2) !important;
+    color: #E2E8F0 !important;
+    border-radius: 8px !important;
+  }
+
+  /* ── SIDEBAR ── */
+  .stSidebar { background: rgba(10, 22, 40, 0.95) !important; border-right: 1px solid #00B4D8; }
+
+  /* ── DIVIDER ── */
+  hr { border-color: rgba(0, 180, 216, 0.2) !important; }
+
+  /* ── MESSAGES ── */
+  .stSuccess { background: rgba(16, 185, 129, 0.1) !important; border-left: 4px solid #10B981 !important; }
+  .stError { background: rgba(239, 68, 68, 0.1) !important; border-left: 4px solid #EF4444 !important; }
+  .stWarning { background: rgba(245, 158, 11, 0.1) !important; border-left: 4px solid #F59E0B !important; }
+  .stInfo { background: rgba(0, 180, 216, 0.1) !important; border-left: 4px solid #00B4D8 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -74,38 +232,54 @@ def format_fecha(fecha_str):
 # ── LOGIN ─────────────────────────────────────────────────────
 
 def login_page():
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3 = st.columns([1, 1.5, 1])
     with col2:
-        st.markdown("## 🔑 IHC Tool™ Admin")
-        st.markdown("**Panel de administración · TyrAdvisor**")
-        st.divider()
-        email = st.text_input("Email", placeholder="mauricio@tyradvisor.com")
-        password = st.text_input("Contraseña", type="password")
-        if st.button("Ingresar", use_container_width=True, type="primary"):
-            if not email or not password:
-                st.error("Ingresa email y contraseña.")
-                return
-            try:
-                sb = get_supabase()
-                auth = sb.auth.sign_in_with_password({"email": email, "password": password})
-                user_id = auth.user.id
-                # Verificar rol admin
-                role = sb.table("user_roles").select("rol").eq("user_id", user_id).single().execute()
-                if role.data and role.data["rol"] == "admin":
-                    st.session_state["authenticated"] = True
-                    st.session_state["user_email"] = email
-                    st.session_state["jwt"] = auth.session.access_token
-                    st.rerun()
-                else:
-                    st.error("Acceso denegado. Solo administradores.")
-            except Exception as e:
-                st.error(f"Error de autenticación: {str(e)}")
+        st.markdown("""
+        <div class="login-container">
+            <div class="login-header">
+                <p class="login-title">IHC <span style="color:#00B4D8">Tool™</span></p>
+                <p class="login-subtitle">Inventory Health Check · TyrAdvisor</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("")
+        email = st.text_input("📧 Email", placeholder="tu@tyradvisor.com")
+        password = st.text_input("🔐 Contraseña", type="password", placeholder="••••••••")
+
+        st.markdown("")
+        col_btn1, col_btn2 = st.columns(2)
+        with col_btn1:
+            pass
+        with col_btn2:
+            if st.button("🚀 Ingresar", use_container_width=True, type="primary"):
+                if not email or not password:
+                    st.error("⚠️ Ingresa email y contraseña.")
+                    return
+                try:
+                    with st.spinner("Verificando credenciales..."):
+                        sb = get_supabase()
+                        auth = sb.auth.sign_in_with_password({"email": email, "password": password})
+                        user_id = auth.user.id
+                        # Verificar rol admin
+                        role = sb.table("user_roles").select("rol").eq("user_id", user_id).single().execute()
+                        if role.data and role.data["rol"] == "admin":
+                            st.session_state["authenticated"] = True
+                            st.session_state["user_email"] = email
+                            st.session_state["jwt"] = auth.session.access_token
+                            st.success("✅ ¡Bienvenido!")
+                            st.rerun()
+                        else:
+                            st.error("🚫 Acceso denegado. Solo administradores.")
+                except Exception as e:
+                    st.error(f"❌ Error: Credenciales inválidas.")
 
 # ── SECCIÓN: CLIENTES ─────────────────────────────────────────
 
 def seccion_clientes():
     sb = get_supabase()
-    st.header("👥 Clientes")
+    st.markdown("# 👥 Clientes")
+    st.markdown("Administra tus clientes y contactos principales")
 
     # Buscador
     buscar = st.text_input("🔍 Buscar por razón social, email o RUT", placeholder="Ej: Empresa SpA")
@@ -170,7 +344,8 @@ def seccion_clientes():
 
 def seccion_licencias():
     sb = get_supabase()
-    st.header("🔑 Licencias")
+    st.markdown("# 🔑 Licencias")
+    st.markdown("Emite, suspende y revoca licencias de clientes")
 
     tabs = st.tabs(["Listado", "Emitir nueva licencia"])
 
@@ -333,7 +508,8 @@ def seccion_licencias():
 
 def seccion_activaciones():
     sb = get_supabase()
-    st.header("📱 Activaciones")
+    st.markdown("# 📱 Activaciones")
+    st.markdown("Monitorea activaciones por licencia y dispositivo")
 
     result = sb.table("activaciones").select(
         "*, licencias(plan_id, clientes(razon_social))"
@@ -370,7 +546,9 @@ def seccion_activaciones():
 
 def seccion_metricas():
     sb = get_supabase()
-    st.header("📊 Métricas")
+    st.markdown("# 📊 Métricas")
+    st.markdown("Dashboard de licencias y revenue")
+    st.markdown("")
 
     lics = sb.table("licencias").select("estado, plan_id, precio_pagado_clp, fecha_expiracion").execute().data or []
 
@@ -380,13 +558,43 @@ def seccion_metricas():
 
     mrr_equiv = sum((l.get("precio_pagado_clp") or 0) / 12 for l in activas)
 
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Licencias activas", len(activas))
-    col2.metric("MRR equivalente", f"${mrr_equiv:,.0f} CLP")
-    col3.metric("Expiradas", len(expiradas))
-    col4.metric("Suspendidas", len(suspendidas))
+    # Tarjetas de métricas
+    col1, col2, col3, col4 = st.columns(4, gap="small")
 
-    st.divider()
+    with col1:
+        st.markdown("""
+        <div class="metric-card">
+            <div class="metric-label">💚 Licencias Activas</div>
+            <div class="metric-value">""" + str(len(activas)) + """</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">💰 MRR Equivalente</div>
+            <div class="metric-value">${mrr_equiv:,.0f}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">⏰ Expiradas</div>
+            <div class="metric-value">{len(expiradas)}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col4:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">⏸️ Suspendidas</div>
+            <div class="metric-value">{len(suspendidas)}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("")
+    st.markdown("---")
 
     # Distribución por plan
     if activas:
@@ -419,19 +627,40 @@ def main():
 
     # Sidebar
     with st.sidebar:
-        st.markdown("### 🔑 IHC Tool™ Admin")
-        st.caption(f"👤 {st.session_state.get('user_email','')}")
-        st.divider()
-        seccion = st.radio("Navegación", [
+        st.markdown("""
+        <div style="text-align: center; padding: 16px 0; margin-bottom: 24px;">
+            <p style="font-size: 20px; font-weight: 900; color: #00B4D8; margin: 0;">IHC <span style="color: #E2E8F0;">Tool™</span></p>
+            <p style="font-size: 11px; color: #64748B; margin-top: 4px; letter-spacing: 0.5px; text-transform: uppercase;">Admin Panel</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div style="background: rgba(0, 180, 216, 0.1); border: 1px solid rgba(0, 180, 216, 0.2); border-radius: 8px; padding: 12px; text-align: center; margin-bottom: 24px;">
+            <p style="font-size: 12px; color: #94A3B8; margin: 0; margin-bottom: 4px;">Administrador</p>
+            <p style="font-size: 13px; color: #00B4D8; margin: 0; font-weight: 600; word-break: break-all;">{st.session_state.get('user_email','')}</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("---")
+        st.markdown("### 🗂️ Navegación")
+
+        seccion = st.radio("", [
             "📊 Métricas",
             "👥 Clientes",
             "🔑 Licencias",
             "📱 Activaciones",
-        ])
-        st.divider()
-        if st.button("Cerrar sesión"):
-            st.session_state.clear()
-            st.rerun()
+        ], label_visibility="collapsed")
+
+        st.markdown("---")
+
+        col1, col2 = st.columns([1, 1], gap="small")
+        with col1:
+            if st.button("🚪 Cerrar sesión", use_container_width=True):
+                st.session_state.clear()
+                st.rerun()
+        with col2:
+            if st.button("ℹ️ Ayuda", use_container_width=True):
+                st.info("Contacta a contacto@tyradvisor.com para soporte.")
 
     if seccion == "📊 Métricas":    seccion_metricas()
     elif seccion == "👥 Clientes":  seccion_clientes()
