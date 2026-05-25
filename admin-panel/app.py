@@ -1,0 +1,442 @@
+# admin-panel/app.py
+# IHC Tool™ — Panel de Administración
+# TyrAdvisor · Sprint 3
+
+import streamlit as st
+import pandas as pd
+from supabase import create_client, Client
+import os
+import secrets
+import string
+from datetime import date, timedelta
+import requests
+
+# ── CONFIGURACIÓN ────────────────────────────────────────────
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+SEND_EMAIL_URL = f"{SUPABASE_URL}/functions/v1/send-email"
+ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
+
+st.set_page_config(
+    page_title="IHC Tool™ Admin",
+    page_icon="🔑",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# ── CSS ───────────────────────────────────────────────────────
+st.markdown("""
+<style>
+  .main { background: #F1F5F9; }
+  .metric-card {
+    background: white; border-radius: 10px; padding: 16px 20px;
+    border: 1px solid #E2E8F0; margin-bottom: 8px;
+  }
+  .badge-activa  { background:#D1FAE5; color:#065F46; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:600; }
+  .badge-expirada{ background:#FEE2E2; color:#991B1B; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:600; }
+  .badge-suspendida{ background:#FEF3C7; color:#92400E; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:600; }
+  .badge-revocada{ background:#F3F4F6; color:#374151; padding:2px 8px; border-radius:4px; font-size:12px; font-weight:600; }
+</style>
+""", unsafe_allow_html=True)
+
+# ── CONEXIÓN SUPABASE ─────────────────────────────────────────
+
+@st.cache_resource
+def get_supabase() -> Client:
+    return create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# ── HELPERS ───────────────────────────────────────────────────
+
+def gen_password(length=12):
+    chars = string.ascii_letters + string.digits + "!@#$"
+    return ''.join(secrets.choice(chars) for _ in range(length))
+
+def send_email(template, to_email, to_name, data, jwt_token):
+    try:
+        res = requests.post(
+            SEND_EMAIL_URL,
+            json={"template": template, "to_email": to_email, "to_name": to_name, "data": data},
+            headers={"apikey": ANON_KEY, "Authorization": f"Bearer {jwt_token}",
+                     "Content-Type": "application/json"},
+            timeout=10
+        )
+        return res.json()
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+def format_fecha(fecha_str):
+    if not fecha_str: return "—"
+    try:
+        d = date.fromisoformat(str(fecha_str)[:10])
+        return d.strftime("%d %b %Y")
+    except: return str(fecha_str)[:10]
+
+# ── LOGIN ─────────────────────────────────────────────────────
+
+def login_page():
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("## 🔑 IHC Tool™ Admin")
+        st.markdown("**Panel de administración · TyrAdvisor**")
+        st.divider()
+        email = st.text_input("Email", placeholder="mauricio@tyradvisor.com")
+        password = st.text_input("Contraseña", type="password")
+        if st.button("Ingresar", use_container_width=True, type="primary"):
+            if not email or not password:
+                st.error("Ingresa email y contraseña.")
+                return
+            try:
+                sb = get_supabase()
+                auth = sb.auth.sign_in_with_password({"email": email, "password": password})
+                user_id = auth.user.id
+                # Verificar rol admin
+                role = sb.table("user_roles").select("rol").eq("user_id", user_id).single().execute()
+                if role.data and role.data["rol"] == "admin":
+                    st.session_state["authenticated"] = True
+                    st.session_state["user_email"] = email
+                    st.session_state["jwt"] = auth.session.access_token
+                    st.rerun()
+                else:
+                    st.error("Acceso denegado. Solo administradores.")
+            except Exception as e:
+                st.error(f"Error de autenticación: {str(e)}")
+
+# ── SECCIÓN: CLIENTES ─────────────────────────────────────────
+
+def seccion_clientes():
+    sb = get_supabase()
+    st.header("👥 Clientes")
+
+    # Buscador
+    buscar = st.text_input("🔍 Buscar por razón social, email o RUT", placeholder="Ej: Empresa SpA")
+
+    # Listar clientes
+    query = sb.table("clientes").select("*").order("created_at", desc=True)
+    result = query.execute()
+    clientes = result.data or []
+
+    if buscar:
+        t = buscar.lower()
+        clientes = [c for c in clientes if
+                    t in (c.get("razon_social") or "").lower() or
+                    t in (c.get("contacto_email") or "").lower() or
+                    t in (c.get("rut") or "").lower()]
+
+    st.caption(f"{len(clientes)} cliente(s) encontrado(s)")
+
+    if clientes:
+        df = pd.DataFrame(clientes)[["razon_social","rut","contacto_email","contacto_nombre","created_at"]]
+        df.columns = ["Razón Social","RUT","Email","Contacto","Fecha Alta"]
+        df["Fecha Alta"] = df["Fecha Alta"].apply(lambda x: str(x)[:10] if x else "")
+        st.dataframe(df, use_container_width=True, hide_index=True)
+
+    st.divider()
+
+    # Nuevo cliente
+    with st.expander("➕ Nuevo cliente"):
+        with st.form("form_nuevo_cliente"):
+            col1, col2 = st.columns(2)
+            with col1:
+                razon_social = st.text_input("Razón social *")
+                contacto_email = st.text_input("Email de contacto *")
+                contacto_nombre = st.text_input("Nombre contacto")
+            with col2:
+                rut = st.text_input("RUT empresa (sin puntos, con guión)")
+                contacto_telefono = st.text_input("Teléfono")
+                industria = st.text_input("Industria")
+            notas = st.text_area("Notas internas", height=80)
+            submitted = st.form_submit_button("Crear cliente", type="primary")
+
+            if submitted:
+                if not razon_social or not contacto_email:
+                    st.error("Razón social y email son requeridos.")
+                else:
+                    try:
+                        sb.table("clientes").insert({
+                            "razon_social": razon_social,
+                            "rut": rut or None,
+                            "contacto_email": contacto_email,
+                            "contacto_nombre": contacto_nombre or None,
+                            "contacto_telefono": contacto_telefono or None,
+                            "industria": industria or None,
+                            "notas": notas or None,
+                        }).execute()
+                        st.success(f"✅ Cliente '{razon_social}' creado.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error: {e}")
+
+# ── SECCIÓN: LICENCIAS ────────────────────────────────────────
+
+def seccion_licencias():
+    sb = get_supabase()
+    st.header("🔑 Licencias")
+
+    tabs = st.tabs(["Listado", "Emitir nueva licencia"])
+
+    # ── TAB 1: Listado ──
+    with tabs[0]:
+        result = sb.table("licencias").select(
+            "*, clientes(razon_social, contacto_email), planes(nombre)"
+        ).order("created_at", desc=True).execute()
+        licencias = result.data or []
+
+        if licencias:
+            rows = []
+            for l in licencias:
+                rows.append({
+                    "Cliente": (l.get("clientes") or {}).get("razon_social","—"),
+                    "Plan": (l.get("planes") or {}).get("nombre","—"),
+                    "Estado": l.get("estado","—"),
+                    "Inicio": format_fecha(l.get("fecha_inicio")),
+                    "Vence": format_fecha(l.get("fecha_expiracion")),
+                    "ID": l.get("id","")[:8] + "...",
+                    "_id": l.get("id",""),
+                    "_estado": l.get("estado",""),
+                })
+            df = pd.DataFrame(rows)
+            st.dataframe(df[["Cliente","Plan","Estado","Inicio","Vence","ID"]],
+                        use_container_width=True, hide_index=True)
+
+            st.divider()
+            st.subheader("Gestionar licencia")
+            lic_ids = {f"{r['Cliente']} — {r['Plan']} ({r['_id'][:8]})": r['_id'] for r in rows}
+            sel = st.selectbox("Selecciona licencia", list(lic_ids.keys()))
+            lic_id = lic_ids[sel]
+
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                if st.button("⏸ Suspender", use_container_width=True):
+                    sb.table("licencias").update({"estado":"suspendida"}).eq("id", lic_id).execute()
+                    sb.table("eventos_licencia").insert({"licencia_id": lic_id, "tipo": "suspension"}).execute()
+                    st.success("Licencia suspendida.")
+                    st.rerun()
+            with col2:
+                if st.button("▶ Reactivar", use_container_width=True):
+                    sb.table("licencias").update({"estado":"activa"}).eq("id", lic_id).execute()
+                    sb.table("eventos_licencia").insert({"licencia_id": lic_id, "tipo": "reactivacion"}).execute()
+                    st.success("Licencia reactivada.")
+                    st.rerun()
+            with col3:
+                if st.button("🚫 Revocar", use_container_width=True, type="primary"):
+                    confirmado = st.checkbox("Confirmo que quiero REVOCAR esta licencia (irreversible)")
+                    if confirmado:
+                        sb.table("licencias").update({"estado":"revocada"}).eq("id", lic_id).execute()
+                        sb.table("eventos_licencia").insert({"licencia_id": lic_id, "tipo": "revocacion"}).execute()
+                        st.warning("Licencia revocada.")
+                        st.rerun()
+        else:
+            st.info("No hay licencias aún.")
+
+    # ── TAB 2: Emitir nueva ──
+    with tabs[1]:
+        st.subheader("Emitir nueva licencia")
+
+        # Cargar clientes para selector
+        clientes_res = sb.table("clientes").select("id, razon_social, contacto_email, contacto_nombre").execute()
+        clientes = clientes_res.data or []
+        cliente_map = {f"{c['razon_social']} ({c['contacto_email']})": c for c in clientes}
+
+        with st.form("form_emitir_licencia"):
+            col1, col2 = st.columns(2)
+            with col1:
+                cliente_sel = st.selectbox("Cliente *", list(cliente_map.keys()))
+                plan = st.selectbox("Plan *", ["starter","pro","enterprise"],
+                                   format_func=lambda x: {"starter":"Starter — $960.000/año",
+                                                           "pro":"Pro — $2.500.000/año",
+                                                           "enterprise":"Enterprise — desde $4.800.000/año"}[x])
+                duracion = st.selectbox("Duración", [12, 24, 36],
+                                       format_func=lambda x: f"{x} meses")
+            with col2:
+                precio_pagado = st.number_input("Precio pagado (CLP)", min_value=0, step=10000)
+                factura = st.text_input("N° Factura", placeholder="F-2026-0001")
+                password_temp = st.text_input("Contraseña temporal",
+                                             value=gen_password(),
+                                             help="Se enviará al cliente por email")
+
+            notas = st.text_area("Notas internas", height=60)
+            enviar_email = st.checkbox("Enviar email de bienvenida al cliente", value=True)
+            submitted = st.form_submit_button("✅ Emitir licencia", type="primary")
+
+            if submitted:
+                cliente = cliente_map[cliente_sel]
+                try:
+                    # 1. Crear usuario en Supabase Auth
+                    auth_user = sb.auth.admin.create_user({
+                        "email": cliente["contacto_email"],
+                        "password": password_temp,
+                        "email_confirm": True,
+                    })
+                    auth_user_id = auth_user.user.id
+
+                    # 2. Asignar rol cliente
+                    sb.table("user_roles").insert({
+                        "user_id": auth_user_id, "rol": "cliente"
+                    }).execute()
+
+                    # 3. Crear licencia
+                    fecha_inicio = date.today()
+                    fecha_exp = fecha_inicio + timedelta(days=30*duracion)
+                    lic = sb.table("licencias").insert({
+                        "cliente_id": cliente["id"],
+                        "plan_id": plan,
+                        "auth_user_id": auth_user_id,
+                        "estado": "activa",
+                        "fecha_inicio": str(fecha_inicio),
+                        "fecha_expiracion": str(fecha_exp),
+                        "precio_pagado_clp": precio_pagado or None,
+                        "factura_numero": factura or None,
+                        "notas_internas": notas or None,
+                    }).execute()
+                    lic_id = lic.data[0]["id"]
+
+                    # 4. Registrar evento
+                    sb.table("eventos_licencia").insert({
+                        "licencia_id": lic_id,
+                        "tipo": "emision",
+                        "detalle": {"plan": plan, "duracion_meses": duracion}
+                    }).execute()
+
+                    # 5. Obtener datos del plan
+                    plan_data = sb.table("planes").select("*").eq("id", plan).single().execute().data
+
+                    # 6. Enviar email si se solicitó
+                    if enviar_email:
+                        email_result = send_email(
+                            template="bienvenida",
+                            to_email=cliente["contacto_email"],
+                            to_name=cliente.get("contacto_nombre") or cliente["razon_social"],
+                            data={
+                                "plan": plan.capitalize(),
+                                "email": cliente["contacto_email"],
+                                "password_temporal": password_temp,
+                                "max_skus": plan_data["max_skus"],
+                                "max_dispositivos": plan_data["max_dispositivos"],
+                                "fecha_expiracion": format_fecha(str(fecha_exp)),
+                            },
+                            jwt_token=st.session_state.get("jwt","")
+                        )
+                        if email_result.get("ok"):
+                            st.success(f"✅ Licencia emitida y email enviado a {cliente['contacto_email']}")
+                        else:
+                            st.warning(f"⚠️ Licencia creada pero el email falló: {email_result.get('error')}")
+                    else:
+                        st.success(f"✅ Licencia emitida. ID: {lic_id[:8]}...")
+
+                    st.info(f"Contraseña temporal: **{password_temp}**")
+                    st.rerun()
+
+                except Exception as e:
+                    st.error(f"Error al emitir licencia: {e}")
+
+# ── SECCIÓN: ACTIVACIONES ─────────────────────────────────────
+
+def seccion_activaciones():
+    sb = get_supabase()
+    st.header("📱 Activaciones")
+
+    result = sb.table("activaciones").select(
+        "*, licencias(plan_id, clientes(razon_social))"
+    ).order("last_seen", desc=True).execute()
+    activaciones = result.data or []
+
+    col1, col2 = st.columns(2)
+    with col1:
+        solo_activas = st.checkbox("Solo activas", value=True)
+    if solo_activas:
+        activaciones = [a for a in activaciones if a.get("activa")]
+
+    if activaciones:
+        rows = []
+        for a in activaciones:
+            lic = a.get("licencias") or {}
+            cli = lic.get("clientes") or {}
+            rows.append({
+                "Cliente": cli.get("razon_social","—"),
+                "Plan": lic.get("plan_id","—").capitalize(),
+                "Fingerprint": (a.get("fingerprint") or "")[:12] + "...",
+                "User Agent": (a.get("user_agent") or "")[:40],
+                "IP": str(a.get("ip_last") or a.get("ip_first") or "—"),
+                "Último acceso": format_fecha(a.get("last_seen")),
+                "Activa": "✅" if a.get("activa") else "❌",
+            })
+        df = pd.DataFrame(rows)
+        st.dataframe(df, use_container_width=True, hide_index=True)
+        st.caption(f"{len(rows)} activación(es)")
+    else:
+        st.info("No hay activaciones registradas aún.")
+
+# ── SECCIÓN: MÉTRICAS ─────────────────────────────────────────
+
+def seccion_metricas():
+    sb = get_supabase()
+    st.header("📊 Métricas")
+
+    lics = sb.table("licencias").select("estado, plan_id, precio_pagado_clp, fecha_expiracion").execute().data or []
+
+    activas    = [l for l in lics if l["estado"] == "activa"]
+    expiradas  = [l for l in lics if l["estado"] == "expirada"]
+    suspendidas = [l for l in lics if l["estado"] == "suspendida"]
+
+    mrr_equiv = sum((l.get("precio_pagado_clp") or 0) / 12 for l in activas)
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Licencias activas", len(activas))
+    col2.metric("MRR equivalente", f"${mrr_equiv:,.0f} CLP")
+    col3.metric("Expiradas", len(expiradas))
+    col4.metric("Suspendidas", len(suspendidas))
+
+    st.divider()
+
+    # Distribución por plan
+    if activas:
+        planes_count = {}
+        for l in activas:
+            p = l["plan_id"].capitalize()
+            planes_count[p] = planes_count.get(p, 0) + 1
+        df_planes = pd.DataFrame(list(planes_count.items()), columns=["Plan","Licencias activas"])
+        st.subheader("Distribución por plan")
+        st.dataframe(df_planes, use_container_width=True, hide_index=True)
+
+    # Próximas a vencer (30 días)
+    hoy = date.today()
+    proximas = [l for l in activas if l.get("fecha_expiracion") and
+                date.fromisoformat(str(l["fecha_expiracion"])[:10]) <= hoy + timedelta(days=30)]
+    if proximas:
+        st.subheader(f"⚠️ Próximas a vencer ({len(proximas)})")
+        df_prox = pd.DataFrame([{
+            "Plan": l["plan_id"].capitalize(),
+            "Vence": format_fecha(l["fecha_expiracion"]),
+        } for l in proximas])
+        st.dataframe(df_prox, use_container_width=True, hide_index=True)
+
+# ── MAIN ──────────────────────────────────────────────────────
+
+def main():
+    if not st.session_state.get("authenticated"):
+        login_page()
+        return
+
+    # Sidebar
+    with st.sidebar:
+        st.markdown("### 🔑 IHC Tool™ Admin")
+        st.caption(f"👤 {st.session_state.get('user_email','')}")
+        st.divider()
+        seccion = st.radio("Navegación", [
+            "📊 Métricas",
+            "👥 Clientes",
+            "🔑 Licencias",
+            "📱 Activaciones",
+        ])
+        st.divider()
+        if st.button("Cerrar sesión"):
+            st.session_state.clear()
+            st.rerun()
+
+    if seccion == "📊 Métricas":    seccion_metricas()
+    elif seccion == "👥 Clientes":  seccion_clientes()
+    elif seccion == "🔑 Licencias": seccion_licencias()
+    elif seccion == "📱 Activaciones": seccion_activaciones()
+
+if __name__ == "__main__":
+    main()
