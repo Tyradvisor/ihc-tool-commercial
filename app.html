@@ -583,14 +583,17 @@ function calcAll() {
   const totalValue = rows.reduce((s,r) => s + r.sys * r.val, 0);
 
   // ── ABC ──
-  const sorted = rows.map(r => ({ ...r, sv: r.sys * r.val })).sort((a,b)=>b.sv-a.sv);
+  // Create sorted array with original index to avoid losing SKUs on duplicates
+  const sorted = rows.map((r, idx) => ({ ...r, sv: r.sys * r.val, _idx: idx })).sort((a,b)=>b.sv-a.sv);
   let cum = 0;
-  sorted.forEach(r => { cum += r.sv; r.abc = cum/totalValue <= 0.80 ? 'A' : cum/totalValue <= 0.95 ? 'B' : 'C'; });
+  sorted.forEach(r => {
+    cum += r.sv;
+    r.abc = totalValue <= 0 ? 'C' : cum/totalValue <= 0.80 ? 'A' : cum/totalValue <= 0.95 ? 'B' : 'C';
+  });
   const abcA = sorted.filter(r=>r.abc==='A'), abcB = sorted.filter(r=>r.abc==='B'), abcC = sorted.filter(r=>r.abc==='C');
   const abcAval = abcA.reduce((s,r)=>s+r.sv,0), abcBval = abcB.reduce((s,r)=>s+r.sv,0), abcCval = abcC.reduce((s,r)=>s+r.sv,0);
-  // re-attach abc to original rows
-  const abcMap = Object.fromEntries(sorted.map(r=>[r.sku, r.abc]));
-  rows.forEach(r => r.abc = abcMap[r.sku] || 'C');
+  // Re-attach abc to original rows by index to handle duplicate SKUs correctly
+  sorted.forEach(r => { rows[r._idx].abc = r.abc; });
 
   // ── EXACTITUD ──
   const withFis = rows.filter(r => r.fis !== null);

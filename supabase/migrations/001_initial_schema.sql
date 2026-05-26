@@ -93,12 +93,15 @@ CREATE TABLE user_roles (
 );
 
 -- Seed initial plans (Starter, Pro, Enterprise)
+-- Starter: $960.000 CLP/año, 1 dispositivo, 5.000 SKUs
+-- Pro: $2.500.000 CLP/año, 3 dispositivos, 50.000 SKUs
+-- Enterprise: desde $4.800.000 CLP/año, ilimitado
 INSERT INTO planes (nombre, descripcion, max_dispositivos, max_skus, dias_offline, export_xlsx, causas_raiz, madurez, feature_flags) VALUES
 (
   'starter',
-  'Plan básico para pequeños negocios',
+  'Plan básico para pequeños negocios: 5.000 SKUs, 1 dispositivo',
   1,
-  1000,
+  5000,
   7,
   false,
   false,
@@ -107,10 +110,10 @@ INSERT INTO planes (nombre, descripcion, max_dispositivos, max_skus, dias_offlin
 ),
 (
   'pro',
-  'Plan profesional con exportación y análisis de causas',
-  5,
-  5000,
-  14,
+  'Plan profesional: 50.000 SKUs, 3 dispositivos, exportación y análisis de causas',
+  3,
+  50000,
+  7,
   true,
   true,
   false,
@@ -118,10 +121,10 @@ INSERT INTO planes (nombre, descripcion, max_dispositivos, max_skus, dias_offlin
 ),
 (
   'enterprise',
-  'Plan empresarial con todas las características',
+  'Plan empresarial: ilimitado todo, análisis avanzado',
   -1,
   -1,
-  30,
+  7,
   true,
   true,
   true,

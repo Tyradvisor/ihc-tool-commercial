@@ -262,8 +262,8 @@ def login_page():
                         auth = sb.auth.sign_in_with_password({"email": email, "password": password})
                         user_id = auth.user.id
                         # Verificar rol admin
-                        role = sb.table("user_roles").select("rol").eq("user_id", user_id).single().execute()
-                        if role.data and role.data["rol"] == "admin":
+                        role = sb.table("user_roles").select("role").eq("user_id", user_id).single().execute()
+                        if role.data and role.data["role"] == "admin":
                             st.session_state["authenticated"] = True
                             st.session_state["user_email"] = email
                             st.session_state["jwt"] = auth.session.access_token
@@ -473,9 +473,9 @@ def seccion_licencias():
                     })
                     auth_user_id = auth_user.user.id
 
-                    # 2. Asignar rol cliente
+                    # 2. Asignar rol de usuario
                     sb.table("user_roles").insert({
-                        "user_id": auth_user_id, "rol": "cliente"
+                        "user_id": auth_user_id, "role": "user"
                     }).execute()
 
                     # 3. Crear licencia
