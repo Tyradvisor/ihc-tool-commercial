@@ -216,14 +216,24 @@
     `;
     document.body.appendChild(div);
 
-    // Enter key en password
+    // Enter key en password — pero valida TyC primero
     document.getElementById('ihc-password').addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('ihc-login-btn').click();
+      if (e.key === 'Enter') {
+        const tycCheck = document.getElementById('tycCheck');
+        if (tycCheck && !tycCheck.checked) {
+          const errEl = document.getElementById('ihc-login-error');
+          errEl.textContent = 'Debes aceptar los Términos y Condiciones para continuar.';
+          errEl.style.display = 'block';
+          return;
+        }
+        document.getElementById('ihc-login-btn').click();
+      }
     });
 
     document.getElementById('ihc-login-btn').addEventListener('click', async () => {
       const email    = document.getElementById('ihc-email').value.trim();
       const password = document.getElementById('ihc-password').value;
+      const tycCheck = document.getElementById('tycCheck');
       const errEl    = document.getElementById('ihc-login-error');
       const btn      = document.getElementById('ihc-login-btn');
 
@@ -231,6 +241,12 @@
 
       if (!email || !password) {
         errEl.textContent = 'Ingresa tu email y contraseña.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      if (tycCheck && !tycCheck.checked) {
+        errEl.textContent = 'Debes aceptar los Términos y Condiciones para continuar.';
         errEl.style.display = 'block';
         return;
       }

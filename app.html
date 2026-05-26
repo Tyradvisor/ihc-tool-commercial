@@ -301,6 +301,23 @@
       .period-tabs { flex-direction: column; }
     }
     @media print { .topbar, .subnav { position: relative; } }
+
+    /* ─── TYC CHECKBOX ─────────────────────────────────────────────────────── */
+    .tyc-wrap {
+      display: flex; align-items: flex-start; gap: 10px;
+      margin: 16px 0 20px; text-align: left;
+    }
+    .tyc-wrap input[type="checkbox"] {
+      width: 18px; height: 18px; accent-color: #00B4D8;
+      cursor: pointer; flex-shrink: 0; margin-top: 2px;
+    }
+    .tyc-wrap label {
+      font-size: 13px; color: #475569; line-height: 1.5; cursor: pointer;
+    }
+    .tyc-wrap a { color: #00B4D8; text-decoration: underline; }
+    #ihc-login-btn.tyc-locked {
+      opacity: 0.4 !important; pointer-events: none !important; cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -521,9 +538,15 @@ function parseFile(file) {
       if (rows.length === 0) throw new Error('No se encontraron filas con datos válidos.');
 
       // ── SKU LIMIT VALIDATION ──
-      const maxSkus = window.ihcLicense?.getMaxSkus?.() || Infinity;
-      if (rows.length > maxSkus) {
-        throw new Error(`Tu plan permite máximo ${maxSkus} SKUs, pero el archivo contiene ${rows.length}. Contacta a soporte para ampliar el límite.`);
+      const maxSkus = window.ihcLicense?.getMaxSkus?.() || 0;
+      // maxSkus = -1 means unlimited (Enterprise)
+      // maxSkus = 0 means no license yet
+      // maxSkus > 0 means limit applies (Starter, Pro)
+      if (maxSkus > 0 && rows.length > maxSkus) {
+        throw new Error(`Tu plan permite máximo ${maxSkus.toLocaleString('es-CL')} SKUs, pero el archivo contiene ${rows.length.toLocaleString('es-CL')}. Contacta a soporte para ampliar el límite.`);
+      }
+      if (maxSkus === 0) {
+        throw new Error('Sin licencia válida. Inicia sesión para continuar.');
       }
 
       S.rows = rows;
@@ -541,6 +564,13 @@ function parseFile(file) {
 function parseDate(v) {
   if (v instanceof Date) return v;
   if (typeof v === 'number') return new Date((v - 25569) * 86400 * 1000); // Excel serial
+
+  // Handle YYYY-MM-DD as local date (not UTC)
+  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    const [year, month, day] = v.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
   const d = new Date(v);
   return isNaN(d) ? null : d;
 }
@@ -652,7 +682,9 @@ function calcAll() {
   // ── BENCHMARK (from questionnaire) ──
   const yesCount = S.answers.filter(a=>a===true).length;
   const benchScore = yesCount * 10;
-  const benchVals  = S.answers.map((a,i) => a ? 85 : Math.floor(Math.random()*30)+5);
+  // Deterministic benchmark values based on company maturity level
+  const determinisicBenchVals = [65, 48, 52, 42, 55, 38, 45, 60, 35, 40];
+  const benchVals  = S.answers.map((a,i) => a ? 85 : determinisicBenchVals[i]);
   const benchBP    = [97, 95, 90, 95, 90, 85, 80, 85, 80, 85];
   const benchLabels= QUESTIONS.map(q => q.bench);
 
@@ -1303,6 +1335,10 @@ function resetApp() {
 
 // ─── BOOTSTRAP PROTECTION ─────────────────────────────────────────────────
 function initializeApp() {
+  // Idempotency guard: prevent double initialization
+  if (window._ihcAppInitialized) return;
+  window._ihcAppInitialized = true;
+
   // Attach event listeners only after license is verified
   document.getElementById('fileInput').addEventListener('change', e => {
     if (e.target.files[0]) parseFile(e.target.files[0]);
@@ -1321,16 +1357,60 @@ function initializeApp() {
   Chart.defaults.color = '#64748B';
 }
 
-// Defer initialization until license verification
-if (window.ihcLicense) {
-  initializeApp();
-} else {
-  // Fallback: initialize after a short delay if license.js doesn't load
-  setTimeout(initializeApp, 2000);
-}
+// Guarda la función original para que license.js la pueda invocar
+window._ihcOriginalBoot = initializeApp;
+
+// La app SOLO se inicializa cuando license.js llama a bootApp()
+// NO hay fallback — license.js debe cargar.
+</script>
+
+
+<!-- ══ TYC INJECTION ══════════════════════════════════════════════════════════ -->
+<script>
+(function injectTyC() {
+  const MAX_ATTEMPTS = 40;
+  let attempts = 0;
+
+  function tryInject() {
+    attempts++;
+    const btn = document.getElementById('ihc-login-btn');
+    if (!btn) {
+      if (attempts < MAX_ATTEMPTS) setTimeout(tryInject, 250);
+      return;
+    }
+    if (document.getElementById('tycCheck')) return;
+
+    btn.classList.add('tyc-locked');
+
+    const wrap = document.createElement('div');
+    wrap.className = 'tyc-wrap';
+    wrap.innerHTML = `
+      <input type="checkbox" id="tycCheck" />
+      <label for="tycCheck">
+        He leído y acepto los
+        <a href="https://tyradvisor.com/terminos" target="_blank" rel="noopener">Términos y Condiciones</a>
+        y la
+        <a href="https://tyradvisor.com/privacidad" target="_blank" rel="noopener">Política de Privacidad</a>
+        de IHC Tool™.
+      </label>
+    `;
+
+    btn.parentNode.insertBefore(wrap, btn);
+
+    document.getElementById('tycCheck').addEventListener('change', function () {
+      btn.classList.toggle('tyc-locked', !this.checked);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() { setTimeout(tryInject, 500); });
+  } else {
+    setTimeout(tryInject, 500);
+  }
+})();
 </script>
 
 <!-- ══ LICENSE LAYER ═════════════════════════════════════════════════════════ -->
-<script src="client/license.js"></script>
+<script src="client/license.min.js"></script>
 </body>
 </html>
