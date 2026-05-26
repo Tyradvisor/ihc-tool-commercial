@@ -542,7 +542,7 @@ supabase functions deploy send-email --project-ref <ref>
 
 **Technical Issues**: engineering@tyradvisor.com  
 **Customer Escalations**: contacto@tyradvisor.com  
-**Billing/License**: mauricio@tyradvisor.com  
+**Billing/License**: contacto@tyradvisor.com  
 **On-Call**: [On-call schedule to be added]
 
 ---
