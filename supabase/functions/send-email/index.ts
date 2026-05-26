@@ -1,5 +1,7 @@
 // supabase/functions/send-email/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verify } from "https://deno.land/x/djwt@v2.8/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -134,6 +136,55 @@ serve(async (req) => {
   }
 
   try {
+    // SECURITY: Require Authorization header
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Token requerido para enviar emails." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const token = authHeader.replace("Bearer ", "");
+
+    // SECURITY: Verify JWT
+    const jwtSecret = Deno.env.get("JWT_SECRET")!;
+    const key = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(jwtSecret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"]
+    );
+
+    let payload: any;
+    try {
+      payload = await verify(token, key);
+    } catch {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Token inválido o expirado." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // SECURITY: Check that user is admin
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { data: userRole, error: roleError } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", payload.sub)
+      .single();
+
+    if (roleError || !userRole || userRole.role !== "admin") {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Acceso denegado. Solo admins pueden enviar emails." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { template, to_email, to_name, data } = await req.json();
 
     if (!template || !to_email) {

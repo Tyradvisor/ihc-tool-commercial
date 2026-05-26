@@ -47,6 +47,18 @@ serve(async (req) => {
     const { fingerprint } = await req.json();
     const clientIp = req.headers.get("x-forwarded-for") ?? "unknown";
 
+    // SECURITY: Validate that fingerprint from body matches the one in JWT payload
+    if (!fingerprint || fingerprint !== payload.fingerprint) {
+      return new Response(
+        JSON.stringify({
+          ok: false,
+          code: "FINGERPRINT_MISMATCH",
+          message: "Intento de acceso desde dispositivo no autorizado."
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
