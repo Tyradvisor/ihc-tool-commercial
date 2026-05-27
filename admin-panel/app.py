@@ -193,41 +193,54 @@ st.markdown("""
   }
 
   /* ── SIDEBAR ── */
-  .stSidebar,
-  [data-testid="stSidebar"] {
+  section[data-testid="stSidebar"],
+  .stSidebar {
     background: rgba(10, 22, 40, 0.95) !important;
     border-right: 1px solid #00B4D8;
   }
 
-  /* Forzar texto claro en TODO el sidebar */
-  [data-testid="stSidebar"] *,
-  [data-testid="stSidebar"] .stMarkdown,
-  [data-testid="stSidebar"] .stMarkdown p,
-  [data-testid="stSidebar"] .stMarkdown span,
-  [data-testid="stSidebar"] .stMarkdown div,
-  [data-testid="stSidebar"] h1,
-  [data-testid="stSidebar"] h2,
-  [data-testid="stSidebar"] h3,
-  [data-testid="stSidebar"] label,
-  [data-testid="stSidebar"] .stRadio label,
-  [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {
-    color: #E2E8F0 !important;
+  /* NUCLEAR: cualquier texto dentro del sidebar = blanco legible */
+  section[data-testid="stSidebar"] *:not(button):not(svg):not(path),
+  section[data-testid="stSidebar"] p,
+  section[data-testid="stSidebar"] span,
+  section[data-testid="stSidebar"] div,
+  section[data-testid="stSidebar"] label,
+  section[data-testid="stSidebar"] h1,
+  section[data-testid="stSidebar"] h2,
+  section[data-testid="stSidebar"] h3,
+  section[data-testid="stSidebar"] h4,
+  section[data-testid="stSidebar"] h5,
+  section[data-testid="stSidebar"] h6,
+  section[data-testid="stSidebar"] .stMarkdown,
+  section[data-testid="stSidebar"] .stMarkdown *,
+  section[data-testid="stSidebar"] .stRadio *,
+  section[data-testid="stSidebar"] [data-baseweb="radio"] *,
+  section[data-testid="stSidebar"] div[role="radiogroup"] *,
+  section[data-testid="stSidebar"] div[role="radiogroup"] label,
+  section[data-testid="stSidebar"] div[role="radiogroup"] label p,
+  section[data-testid="stSidebar"] div[role="radiogroup"] label span,
+  section[data-testid="stSidebar"] div[role="radiogroup"] label div {
+    color: #F8FAFC !important;
   }
 
-  /* Items de radio (Navegación): texto claro y hover destacado */
-  [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label {
+  /* Items de radio: padding, hover, ítem activo */
+  section[data-testid="stSidebar"] div[role="radiogroup"] > label {
     padding: 8px 10px !important;
     border-radius: 6px !important;
     margin-bottom: 4px !important;
     transition: background 0.15s ease;
+    cursor: pointer;
   }
-  [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:hover {
-    background: rgba(0, 180, 216, 0.12) !important;
+  section[data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
+    background: rgba(0, 180, 216, 0.15) !important;
+  }
+  /* Ítem seleccionado: fondo destacado */
+  section[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked) {
+    background: rgba(0, 180, 216, 0.20) !important;
   }
 
-  /* Texto destacado (email admin, headers) en color marca */
-  [data-testid="stSidebar"] strong,
-  [data-testid="stSidebar"] b {
+  /* Email admin (en card cyan) mantiene color marca — más específico que regla NUCLEAR */
+  section[data-testid="stSidebar"] p[style*="#00B4D8"] {
     color: #00B4D8 !important;
   }
 
