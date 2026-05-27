@@ -12,10 +12,19 @@ from datetime import date, timedelta
 import requests
 
 # ── CONFIGURACIÓN ────────────────────────────────────────────
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
-SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+def _get_secret(key: str, default: str = "") -> str:
+    """Lee secret desde st.secrets (Streamlit Cloud) con fallback a os.environ (local/.env)."""
+    try:
+        if hasattr(st, "secrets") and key in st.secrets:
+            return st.secrets[key]
+    except Exception:
+        pass
+    return os.environ.get(key, default)
+
+SUPABASE_URL = _get_secret("SUPABASE_URL")
+SUPABASE_KEY = _get_secret("SUPABASE_SERVICE_ROLE_KEY")
 SEND_EMAIL_URL = f"{SUPABASE_URL}/functions/v1/send-email"
-ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
+ANON_KEY = _get_secret("SUPABASE_ANON_KEY")
 
 st.set_page_config(
     page_title="IHC Tool™ Admin",
