@@ -205,7 +205,7 @@
         <label class="ihc-login-label">Contraseña</label>
         <input id="ihc-password" type="password" class="ihc-login-input" placeholder="••••••••" autocomplete="current-password" />
         <div class="ihc-login-forgot">
-          <a href="mailto:mauricio@tyradvisor.com?subject=Recuperar%20contraseña%20IHC%20Tool">¿Olvidé mi contraseña?</a>
+          <a href="mailto:contacto@tyradvisor.com?subject=Recuperar%20contraseña%20IHC%20Tool">¿Olvidé mi contraseña?</a>
         </div>
         <button id="ihc-login-btn" class="ihc-login-btn">Iniciar sesión</button>
         <p class="ihc-login-privacy">
@@ -216,14 +216,24 @@
     `;
     document.body.appendChild(div);
 
-    // Enter key en password
+    // Enter key en password — pero valida TyC primero
     document.getElementById('ihc-password').addEventListener('keydown', e => {
-      if (e.key === 'Enter') document.getElementById('ihc-login-btn').click();
+      if (e.key === 'Enter') {
+        const tycCheck = document.getElementById('tycCheck');
+        if (tycCheck && !tycCheck.checked) {
+          const errEl = document.getElementById('ihc-login-error');
+          errEl.textContent = 'Debes aceptar los Términos y Condiciones para continuar.';
+          errEl.style.display = 'block';
+          return;
+        }
+        document.getElementById('ihc-login-btn').click();
+      }
     });
 
     document.getElementById('ihc-login-btn').addEventListener('click', async () => {
       const email    = document.getElementById('ihc-email').value.trim();
       const password = document.getElementById('ihc-password').value;
+      const tycCheck = document.getElementById('tycCheck');
       const errEl    = document.getElementById('ihc-login-error');
       const btn      = document.getElementById('ihc-login-btn');
 
@@ -231,6 +241,12 @@
 
       if (!email || !password) {
         errEl.textContent = 'Ingresa tu email y contraseña.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      if (tycCheck && !tycCheck.checked) {
+        errEl.textContent = 'Debes aceptar los Términos y Condiciones para continuar.';
         errEl.style.display = 'block';
         return;
       }
@@ -362,7 +378,7 @@
         <div class="ihc-modal-row"><span class="ihc-modal-key">Máx. SKUs</span><span class="ihc-modal-val">${payload.max_skus === -1 ? 'Ilimitado' : payload.max_skus?.toLocaleString('es-CL')}</span></div>
         <div class="ihc-modal-row"><span class="ihc-modal-key">Exportar Excel</span><span class="ihc-modal-val">${ff.export_xlsx ? '✅ Incluido' : '❌ No incluido'}</span></div>
         <div class="ihc-modal-row"><span class="ihc-modal-key">Causas Raíz</span><span class="ihc-modal-val">${ff.causas_raiz ? '✅ Incluido' : '❌ No incluido'}</span></div>
-        <div class="ihc-modal-row"><span class="ihc-modal-key">Soporte</span><span class="ihc-modal-val"><a href="mailto:mauricio@tyradvisor.com" style="color:#00B4D8">mauricio@tyradvisor.com</a></span></div>
+        <div class="ihc-modal-row"><span class="ihc-modal-key">Soporte</span><span class="ihc-modal-val"><a href="mailto:contacto@tyradvisor.com" style="color:#00B4D8">contacto@tyradvisor.com</a></span></div>
         <div class="ihc-modal-actions">
           <button class="ihc-btn-close" onclick="document.getElementById('ihc-modal-cuenta').style.display='none'">Cerrar</button>
           <button class="ihc-btn-logout" id="ihc-logout-btn">Cerrar sesión</button>

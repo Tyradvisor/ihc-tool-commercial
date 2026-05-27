@@ -12,10 +12,19 @@ from datetime import date, timedelta
 import requests
 
 # ── CONFIGURACIÓN ────────────────────────────────────────────
-SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
-SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+def _get_secret(key: str, default: str = "") -> str:
+    """Lee secret desde st.secrets (Streamlit Cloud) con fallback a os.environ (local/.env)."""
+    try:
+        if hasattr(st, "secrets") and key in st.secrets:
+            return st.secrets[key]
+    except Exception:
+        pass
+    return os.environ.get(key, default)
+
+SUPABASE_URL = _get_secret("SUPABASE_URL")
+SUPABASE_KEY = _get_secret("SUPABASE_SERVICE_ROLE_KEY")
 SEND_EMAIL_URL = f"{SUPABASE_URL}/functions/v1/send-email"
-ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
+ANON_KEY = _get_secret("SUPABASE_ANON_KEY")
 
 st.set_page_config(
     page_title="IHC Tool™ Admin",
@@ -261,9 +270,9 @@ def login_page():
                         sb = get_supabase()
                         auth = sb.auth.sign_in_with_password({"email": email, "password": password})
                         user_id = auth.user.id
-                        # Verificar rol admin
+                        # Verificar rol admin (columna real en BD: "rol")
                         role = sb.table("user_roles").select("rol").eq("user_id", user_id).single().execute()
-                        if role.data and role.data["rol"] == "admin":
+                        if role.data and role.data.get("rol") == "admin":
                             st.session_state["authenticated"] = True
                             st.session_state["user_email"] = email
                             st.session_state["jwt"] = auth.session.access_token
@@ -272,7 +281,14 @@ def login_page():
                         else:
                             st.error("🚫 Acceso denegado. Solo administradores.")
                 except Exception as e:
-                    st.error(f"❌ Error: Credenciales inválidas.")
+                    # Mostrar detalle del error para diagnóstico (sin exponer secretos)
+                    err_msg = str(e)
+                    if "Invalid login credentials" in err_msg or "invalid_grant" in err_msg:
+                        st.error("❌ Email o contraseña incorrectos.")
+                    elif "PGRST116" in err_msg or "0 rows" in err_msg:
+                        st.error("🚫 Usuario sin rol admin asignado.")
+                    else:
+                        st.error(f"❌ Error de login: {err_msg[:200]}")
 
 # ── SECCIÓN: CLIENTES ─────────────────────────────────────────
 
@@ -473,9 +489,9 @@ def seccion_licencias():
                     })
                     auth_user_id = auth_user.user.id
 
-                    # 2. Asignar rol cliente
+                    # 2. Asignar rol de usuario (columna real en BD: "rol")
                     sb.table("user_roles").insert({
-                        "user_id": auth_user_id, "rol": "cliente"
+                        "user_id": auth_user_id, "rol": "user"
                     }).execute()
 
                     # 3. Crear licencia

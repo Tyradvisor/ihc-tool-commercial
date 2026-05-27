@@ -1,0 +1,6 @@
+{
+  "devDependencies": {
+    "supabase-cli": "^0.0.21",
+    "terser": "^5.48.0"
+  }
+}

@@ -2,22 +2,43 @@
 .env
 .env.local
 .env.*.local
+.env.production
 *.pem
 *service_role*
 *secret*
+*api*key*
+*token*
 
 # Node
 node_modules/
 npm-debug.log*
+.next/
+dist/
+build/
 
 # Python
 __pycache__/
 *.pyc
 .venv/
 venv/
+.streamlit/secrets.toml
 
 # Supabase
 .supabase/
+supabase/.env*
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs & Temporary
+*.log
+logs/
+tmp/
+temp/
 
 # OS
 .DS_Store

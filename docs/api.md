@@ -36,15 +36,14 @@ apikey: <ANON-KEY>
 ```json
 {
   "ok": true,
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLWlkIiwibGljZW5jaWFfaWQiOiJsaWMtaWQiLCJwbGFuIjoicGxhbi1pZCIsImZlYXR1cmVfZmxhZ3MiOnsiZm9vIjp0cnVlfSwibWF4X3NrdXMiOjEwMDAsImZpbmdlcnByaW50IjoiYWJjMTIzIiwiZXhwIjoxNzE3NjAwMDAwLCJpYXQiOjE3MTc1MDAwMDAsImlzcyI6ImloYy10eXJhZHZpc29yIn0.signature",
-  "plan": "professional",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLWlkIiwibGljZW5jaWFfaWQiOiJsaWMtaWQiLCJwbGFuIjoicGxhbi1pZCIsImZlYXR1cmVfZmxhZ3MiOnsiZm9vIjp0cnVlfSwibWF4X3NrdXMiOjUwMDAwLCJmaW5nZXJwcmludCI6ImFiYzEyMyIsImV4cCI6MTcxNzYwMDAwMCwiaWF0IjoxNzE3NTAwMDAwLCJpc3MiOiJpaGMtdHlyYWR2aXNvciJ9.signature",
+  "plan": "pro",
   "feature_flags": {
-    "offline_mode": true,
-    "advanced_reports": true,
-    "api_access": false
+    "export_xlsx": true,
+    "causas_raiz": true
   },
-  "max_skus": 1000,
-  "max_dispositivos": 5,
+  "max_skus": 50000,
+  "max_dispositivos": 3,
   "dispositivos_usados": 1,
   "fecha_expiracion": "2026-12-31",
   "dias_offline_permitidos": 30,
