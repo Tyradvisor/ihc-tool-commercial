@@ -193,7 +193,43 @@ st.markdown("""
   }
 
   /* ── SIDEBAR ── */
-  .stSidebar { background: rgba(10, 22, 40, 0.95) !important; border-right: 1px solid #00B4D8; }
+  .stSidebar,
+  [data-testid="stSidebar"] {
+    background: rgba(10, 22, 40, 0.95) !important;
+    border-right: 1px solid #00B4D8;
+  }
+
+  /* Forzar texto claro en TODO el sidebar */
+  [data-testid="stSidebar"] *,
+  [data-testid="stSidebar"] .stMarkdown,
+  [data-testid="stSidebar"] .stMarkdown p,
+  [data-testid="stSidebar"] .stMarkdown span,
+  [data-testid="stSidebar"] .stMarkdown div,
+  [data-testid="stSidebar"] h1,
+  [data-testid="stSidebar"] h2,
+  [data-testid="stSidebar"] h3,
+  [data-testid="stSidebar"] label,
+  [data-testid="stSidebar"] .stRadio label,
+  [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label p {
+    color: #E2E8F0 !important;
+  }
+
+  /* Items de radio (Navegación): texto claro y hover destacado */
+  [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label {
+    padding: 8px 10px !important;
+    border-radius: 6px !important;
+    margin-bottom: 4px !important;
+    transition: background 0.15s ease;
+  }
+  [data-testid="stSidebar"] .stRadio div[role="radiogroup"] label:hover {
+    background: rgba(0, 180, 216, 0.12) !important;
+  }
+
+  /* Texto destacado (email admin, headers) en color marca */
+  [data-testid="stSidebar"] strong,
+  [data-testid="stSidebar"] b {
+    color: #00B4D8 !important;
+  }
 
   /* ── DIVIDER ── */
   hr { border-color: rgba(0, 180, 216, 0.2) !important; }
