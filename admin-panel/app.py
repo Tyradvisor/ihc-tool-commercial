@@ -388,15 +388,35 @@ def seccion_clientes():
                 **Notas:** {cliente_sel.get('notas') or '—'}
                 """)
         with col2:
+            # Confirmación en dos pasos vía session_state (anti-patrón: checkbox dentro de if button)
             if st.button("🗑️ Eliminar cliente", use_container_width=True, type="secondary"):
-                confirmado = st.checkbox(f"Confirmo eliminar '{cliente_sel['razon_social']}'")
-                if confirmado:
+                st.session_state["cliente_a_eliminar"] = cliente_sel["id"]
+                st.session_state["cliente_a_eliminar_nombre"] = cliente_sel["razon_social"]
+                st.rerun()
+
+        # Bloque de confirmación: aparece solo cuando hay un cliente marcado para eliminar
+        if st.session_state.get("cliente_a_eliminar") == cliente_sel["id"]:
+            st.warning(f"⚠️ ¿Confirmas eliminar **{st.session_state['cliente_a_eliminar_nombre']}**? Esta acción no se puede deshacer.")
+            cc1, cc2 = st.columns(2)
+            with cc1:
+                if st.button("✅ Sí, eliminar", type="primary", use_container_width=True, key="confirm_delete_cliente"):
                     try:
                         sb.table("clientes").delete().eq("id", cliente_sel["id"]).execute()
+                        st.session_state.pop("cliente_a_eliminar", None)
+                        st.session_state.pop("cliente_a_eliminar_nombre", None)
                         st.success(f"✅ Cliente eliminado.")
                         st.rerun()
                     except Exception as e:
-                        st.error(f"Error: {e}")
+                        err_msg = str(e)
+                        if "foreign key" in err_msg.lower() or "violates" in err_msg.lower():
+                            st.error("❌ No se puede eliminar: este cliente tiene licencias asociadas. Elimina sus licencias primero.")
+                        else:
+                            st.error(f"❌ Error al eliminar: {err_msg[:200]}")
+            with cc2:
+                if st.button("✖ Cancelar", use_container_width=True, key="cancel_delete_cliente"):
+                    st.session_state.pop("cliente_a_eliminar", None)
+                    st.session_state.pop("cliente_a_eliminar_nombre", None)
+                    st.rerun()
 
     st.divider()
 
