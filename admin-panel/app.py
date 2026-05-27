@@ -738,12 +738,28 @@ def main():
         st.markdown("---")
         st.markdown("### 🗂️ Navegación")
 
-        seccion = st.radio("", [
+        # Navegación con botones nativos (inmune al problema de textColor del tema)
+        if "seccion_actual" not in st.session_state:
+            st.session_state["seccion_actual"] = "📊 Métricas"
+
+        opciones_nav = [
             "📊 Métricas",
             "👥 Clientes",
             "🔑 Licencias",
             "📱 Activaciones",
-        ], label_visibility="collapsed")
+        ]
+        for opcion in opciones_nav:
+            es_activa = st.session_state["seccion_actual"] == opcion
+            if st.button(
+                opcion,
+                key=f"nav_{opcion}",
+                use_container_width=True,
+                type="primary" if es_activa else "secondary",
+            ):
+                st.session_state["seccion_actual"] = opcion
+                st.rerun()
+
+        seccion = st.session_state["seccion_actual"]
 
         st.markdown("---")
 
