@@ -270,9 +270,9 @@ def login_page():
                         sb = get_supabase()
                         auth = sb.auth.sign_in_with_password({"email": email, "password": password})
                         user_id = auth.user.id
-                        # Verificar rol admin
-                        role = sb.table("user_roles").select("role").eq("user_id", user_id).single().execute()
-                        if role.data and role.data["role"] == "admin":
+                        # Verificar rol admin (columna real en BD: "rol")
+                        role = sb.table("user_roles").select("rol").eq("user_id", user_id).single().execute()
+                        if role.data and role.data.get("rol") == "admin":
                             st.session_state["authenticated"] = True
                             st.session_state["user_email"] = email
                             st.session_state["jwt"] = auth.session.access_token
@@ -281,7 +281,14 @@ def login_page():
                         else:
                             st.error("🚫 Acceso denegado. Solo administradores.")
                 except Exception as e:
-                    st.error(f"❌ Error: Credenciales inválidas.")
+                    # Mostrar detalle del error para diagnóstico (sin exponer secretos)
+                    err_msg = str(e)
+                    if "Invalid login credentials" in err_msg or "invalid_grant" in err_msg:
+                        st.error("❌ Email o contraseña incorrectos.")
+                    elif "PGRST116" in err_msg or "0 rows" in err_msg:
+                        st.error("🚫 Usuario sin rol admin asignado.")
+                    else:
+                        st.error(f"❌ Error de login: {err_msg[:200]}")
 
 # ── SECCIÓN: CLIENTES ─────────────────────────────────────────
 
@@ -482,9 +489,9 @@ def seccion_licencias():
                     })
                     auth_user_id = auth_user.user.id
 
-                    # 2. Asignar rol de usuario
+                    # 2. Asignar rol de usuario (columna real en BD: "rol")
                     sb.table("user_roles").insert({
-                        "user_id": auth_user_id, "role": "user"
+                        "user_id": auth_user_id, "rol": "user"
                     }).execute()
 
                     # 3. Crear licencia
