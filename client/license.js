@@ -5,10 +5,13 @@
 (function () {
 
   // ── CONFIGURACIÓN ──────────────────────────────────────────
-  const API_BASE       = 'https://ikdrnispjakjaxqwzhaf.supabase.co/functions/v1';
+  const SUPABASE_BASE  = 'https://ikdrnispjakjaxqwzhaf.supabase.co';
+  const API_BASE       = SUPABASE_BASE + '/functions/v1';
+  const AUTH_BASE      = SUPABASE_BASE + '/auth/v1';
   const ANON_KEY       = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlrZHJuaXNwamFramF4cXd6aGFmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk2ODYyNzUsImV4cCI6MjA5NTI2MjI3NX0.Chm-6IsdEF2Hc1D2JKWQLRs5-nPIVcGXUXla9LZnV9o';
   const STORAGE_TOKEN  = 'ihc_license_token';
   const STORAGE_FP     = 'ihc_device_fp';
+  const STORAGE_EMAIL  = 'ihc_user_email';
   const HEARTBEAT_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 días
 
   // ── UTILIDADES ─────────────────────────────────────────────
@@ -101,6 +104,48 @@
 
   function clearSession() {
     localStorage.removeItem(STORAGE_TOKEN);
+    localStorage.removeItem(STORAGE_EMAIL);
+  }
+
+  // ── CAMBIO DE CONTRASEÑA ───────────────────────────────────
+
+  async function callChangePassword(email, currentPassword, newPassword) {
+    // Paso 1: re-validar la contraseña actual con Supabase Auth para obtener access_token
+    const signInRes = await fetch(AUTH_BASE + '/token?grant_type=password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': ANON_KEY
+      },
+      body: JSON.stringify({ email, password: currentPassword })
+    });
+    if (!signInRes.ok) {
+      const body = await signInRes.json().catch(() => ({}));
+      const msg = body.error_description || body.msg || 'Contraseña actual incorrecta.';
+      return { ok: false, error: msg };
+    }
+    const signInData = await signInRes.json();
+    const accessToken = signInData.access_token;
+    if (!accessToken) {
+      return { ok: false, error: 'No se pudo validar la contraseña actual.' };
+    }
+
+    // Paso 2: actualizar la contraseña usando el access_token recién obtenido
+    const updateRes = await fetch(AUTH_BASE + '/user', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': ANON_KEY,
+        'Authorization': 'Bearer ' + accessToken
+      },
+      body: JSON.stringify({ password: newPassword })
+    });
+    if (!updateRes.ok) {
+      const body = await updateRes.json().catch(() => ({}));
+      const msg = body.error_description || body.msg || body.message || 'Error al actualizar la contraseña.';
+      return { ok: false, error: msg };
+    }
+    return { ok: true };
   }
 
   // ── LLAMADAS A LA API ──────────────────────────────────────
@@ -258,6 +303,7 @@
         const result = await callValidateLicense(email, password);
         if (result.ok) {
           cacheToken(result.token);
+          localStorage.setItem(STORAGE_EMAIL, email);
           hideLoginOverlay();
           bootApp(parseJwt(result.token));
         } else {
@@ -342,6 +388,7 @@
     const plan = (payload.plan || 'starter').charAt(0).toUpperCase() + payload.plan.slice(1);
     const exp  = new Date(payload.exp * 1000).toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' });
     const ff   = payload.feature_flags || {};
+    const userEmail = localStorage.getItem(STORAGE_EMAIL) || '';
 
     modal.innerHTML = `
       <style>
@@ -353,12 +400,49 @@
         .ihc-modal-box {
           background: #fff; border-radius: 14px; padding: 32px 36px;
           max-width: 480px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+          max-height: 90vh; overflow-y: auto;
         }
         .ihc-modal-title { font-size: 18px; font-weight: 800; color: #0A1628; margin-bottom: 20px; }
         .ihc-modal-row { display: flex; justify-content: space-between; padding: 8px 0;
           border-bottom: 1px solid #F1F5F9; font-size: 13px; }
         .ihc-modal-key { color: #64748B; }
         .ihc-modal-val { font-weight: 600; color: #1E293B; }
+        .ihc-modal-section-title {
+          font-size: 13px; font-weight: 700; color: #0A1628;
+          margin-top: 20px; margin-bottom: 10px;
+        }
+        .ihc-modal-toggle-pw {
+          background: none; border: none; color: #00B4D8; cursor: pointer;
+          font-family: inherit; font-size: 12px; font-weight: 600;
+          padding: 6px 0; margin-top: 4px;
+        }
+        .ihc-modal-toggle-pw:hover { text-decoration: underline; }
+        .ihc-pw-form { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px solid #F1F5F9; }
+        .ihc-pw-form.open { display: block; }
+        .ihc-pw-label {
+          display: block; font-size: 11px; font-weight: 600;
+          color: #64748B; margin-bottom: 4px; margin-top: 8px;
+        }
+        .ihc-pw-input {
+          width: 100%; padding: 8px 10px; border: 1px solid #E2E8F0;
+          border-radius: 6px; font-size: 13px; font-family: inherit;
+          outline: none; box-sizing: border-box;
+        }
+        .ihc-pw-input:focus { border-color: #00B4D8; }
+        .ihc-pw-help { font-size: 11px; color: #94A3B8; margin-top: 4px; }
+        .ihc-pw-feedback {
+          font-size: 12px; padding: 8px 10px; border-radius: 6px;
+          margin-top: 10px; display: none;
+        }
+        .ihc-pw-feedback.error { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
+        .ihc-pw-feedback.success { background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
+        .ihc-btn-save-pw {
+          background: #00B4D8; color: #0A1628; border: none;
+          padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 700;
+          cursor: pointer; margin-top: 12px; font-family: inherit;
+        }
+        .ihc-btn-save-pw:hover { opacity: 0.88; }
+        .ihc-btn-save-pw:disabled { opacity: 0.5; cursor: not-allowed; }
         .ihc-modal-actions { margin-top: 24px; display: flex; gap: 10px; justify-content: flex-end; }
         .ihc-btn-logout {
           background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA;
@@ -373,12 +457,28 @@
       </style>
       <div class="ihc-modal-box">
         <div class="ihc-modal-title">Mi Cuenta</div>
+        <div class="ihc-modal-row"><span class="ihc-modal-key">Email</span><span class="ihc-modal-val">${userEmail || '—'}</span></div>
         <div class="ihc-modal-row"><span class="ihc-modal-key">Plan</span><span class="ihc-modal-val">${plan}</span></div>
         <div class="ihc-modal-row"><span class="ihc-modal-key">Vencimiento</span><span class="ihc-modal-val">${exp}</span></div>
         <div class="ihc-modal-row"><span class="ihc-modal-key">Máx. SKUs</span><span class="ihc-modal-val">${payload.max_skus === -1 ? 'Ilimitado' : payload.max_skus?.toLocaleString('es-CL')}</span></div>
         <div class="ihc-modal-row"><span class="ihc-modal-key">Exportar Excel</span><span class="ihc-modal-val">${ff.export_xlsx ? '✅ Incluido' : '❌ No incluido'}</span></div>
         <div class="ihc-modal-row"><span class="ihc-modal-key">Causas Raíz</span><span class="ihc-modal-val">${ff.causas_raiz ? '✅ Incluido' : '❌ No incluido'}</span></div>
         <div class="ihc-modal-row"><span class="ihc-modal-key">Soporte</span><span class="ihc-modal-val"><a href="mailto:contacto@tyradvisor.com" style="color:#00B4D8">contacto@tyradvisor.com</a></span></div>
+
+        <div class="ihc-modal-section-title">🔐 Seguridad</div>
+        <button class="ihc-modal-toggle-pw" id="ihc-toggle-pw-form">Cambiar contraseña ▼</button>
+        <div class="ihc-pw-form" id="ihc-pw-form">
+          <label class="ihc-pw-label">Contraseña actual</label>
+          <input type="password" id="ihc-pw-current" class="ihc-pw-input" autocomplete="current-password" />
+          <label class="ihc-pw-label">Nueva contraseña</label>
+          <input type="password" id="ihc-pw-new" class="ihc-pw-input" autocomplete="new-password" />
+          <p class="ihc-pw-help">Mínimo 6 caracteres.</p>
+          <label class="ihc-pw-label">Confirmar nueva contraseña</label>
+          <input type="password" id="ihc-pw-confirm" class="ihc-pw-input" autocomplete="new-password" />
+          <div id="ihc-pw-feedback" class="ihc-pw-feedback"></div>
+          <button class="ihc-btn-save-pw" id="ihc-btn-save-pw">Guardar nueva contraseña</button>
+        </div>
+
         <div class="ihc-modal-actions">
           <button class="ihc-btn-close" onclick="document.getElementById('ihc-modal-cuenta').style.display='none'">Cerrar</button>
           <button class="ihc-btn-logout" id="ihc-logout-btn">Cerrar sesión</button>
@@ -390,6 +490,87 @@
     document.getElementById('ihc-logout-btn').addEventListener('click', () => {
       clearSession();
       location.reload();
+    });
+
+    // Toggle del form de cambio de contraseña
+    const toggleBtn = document.getElementById('ihc-toggle-pw-form');
+    const pwForm    = document.getElementById('ihc-pw-form');
+    toggleBtn.addEventListener('click', () => {
+      const isOpen = pwForm.classList.toggle('open');
+      toggleBtn.textContent = isOpen ? 'Cambiar contraseña ▲' : 'Cambiar contraseña ▼';
+    });
+
+    // Handler del cambio de contraseña
+    document.getElementById('ihc-btn-save-pw').addEventListener('click', async () => {
+      const currentInput = document.getElementById('ihc-pw-current');
+      const newInput     = document.getElementById('ihc-pw-new');
+      const confirmInput = document.getElementById('ihc-pw-confirm');
+      const feedback     = document.getElementById('ihc-pw-feedback');
+      const saveBtn      = document.getElementById('ihc-btn-save-pw');
+
+      const current = currentInput.value;
+      const newPw   = newInput.value;
+      const confirm = confirmInput.value;
+
+      feedback.style.display = 'none';
+      feedback.className = 'ihc-pw-feedback';
+
+      if (!userEmail) {
+        feedback.textContent = 'No se pudo identificar tu email. Cierra sesión y vuelve a entrar.';
+        feedback.classList.add('error');
+        feedback.style.display = 'block';
+        return;
+      }
+      if (!current || !newPw || !confirm) {
+        feedback.textContent = 'Completa todos los campos.';
+        feedback.classList.add('error');
+        feedback.style.display = 'block';
+        return;
+      }
+      if (newPw.length < 6) {
+        feedback.textContent = 'La nueva contraseña debe tener al menos 6 caracteres.';
+        feedback.classList.add('error');
+        feedback.style.display = 'block';
+        return;
+      }
+      if (newPw !== confirm) {
+        feedback.textContent = 'La nueva contraseña y la confirmación no coinciden.';
+        feedback.classList.add('error');
+        feedback.style.display = 'block';
+        return;
+      }
+      if (newPw === current) {
+        feedback.textContent = 'La nueva contraseña no puede ser igual a la actual.';
+        feedback.classList.add('error');
+        feedback.style.display = 'block';
+        return;
+      }
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Guardando…';
+
+      try {
+        const result = await callChangePassword(userEmail, current, newPw);
+        if (result.ok) {
+          feedback.textContent = '✅ Contraseña actualizada. Usa la nueva la próxima vez que inicies sesión.';
+          feedback.classList.add('success');
+          feedback.style.display = 'block';
+          currentInput.value = '';
+          newInput.value = '';
+          confirmInput.value = '';
+        } else {
+          feedback.textContent = '❌ ' + (result.error || 'No se pudo actualizar la contraseña.');
+          feedback.classList.add('error');
+          feedback.style.display = 'block';
+        }
+      } catch (e) {
+        feedback.textContent = '❌ Sin conexión. Verifica tu red e intenta otra vez.';
+        feedback.classList.add('error');
+        feedback.style.display = 'block';
+      }
+
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Guardar nueva contraseña';
     });
   }
 
