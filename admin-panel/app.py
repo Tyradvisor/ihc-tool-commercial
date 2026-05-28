@@ -8,6 +8,7 @@ from supabase import create_client, Client
 import os
 import secrets
 import string
+import time
 from datetime import date, timedelta
 import requests
 
@@ -287,6 +288,55 @@ def format_fecha(fecha_str):
         return d.strftime("%d %b %Y")
     except: return str(fecha_str)[:10]
 
+
+# ── REVALIDACIÓN DE SESIÓN ────────────────────────────────────
+
+# Cuántos segundos cacheamos el check de rol antes de re-consultar la BD.
+# Balance: muy alto = más riesgo si revocamos admin / muy bajo = más queries.
+_ROLE_RECHECK_INTERVAL_SEC = 60
+
+def require_admin():
+    """Re-valida que el usuario logueado siga siendo admin en la BD.
+
+    Llamada desde main() en cada re-run de Streamlit (cada interacción).
+    Usa una caché por sesión de _ROLE_RECHECK_INTERVAL_SEC para no martillar
+    la BD en cada click — el rol se reconsulta máximo cada 60 segundos.
+
+    Si el usuario ya no es admin (rol revocado, registro borrado, etc.),
+    limpia la sesión y fuerza un re-login.
+    """
+    user_id = st.session_state.get("user_id")
+    if not user_id:
+        # Estado inconsistente: marcado como authenticated pero sin user_id.
+        # Probablemente sesión vieja anterior al fix — pedir re-login.
+        _clear_session_and_rerun("Tu sesión es inválida. Vuelve a iniciar sesión.")
+        return
+
+    now = time.time()
+    last_check = st.session_state.get("last_role_check", 0)
+    if (now - last_check) < _ROLE_RECHECK_INTERVAL_SEC:
+        return  # Cache válida, no consultar
+
+    try:
+        sb = get_supabase()
+        role_res = sb.table("user_roles").select("rol").eq("user_id", user_id).single().execute()
+        if not role_res.data or role_res.data.get("rol") != "admin":
+            _clear_session_and_rerun("Tu rol de administrador fue removido. Contacta a TyrAdvisor si crees que es un error.")
+            return
+        st.session_state["last_role_check"] = now
+    except Exception:
+        # Si la BD no responde, NO expulsamos al usuario — preferimos
+        # falso positivo (sigue dentro) sobre falso negativo (logout en cada error de red).
+        # En el siguiente click se vuelve a intentar.
+        pass
+
+
+def _clear_session_and_rerun(message: str):
+    """Limpia toda la sesión y muestra un mensaje antes del re-login."""
+    st.session_state.clear()
+    st.session_state["flash_post_logout"] = message
+    st.rerun()
+
 # ── LOGIN ─────────────────────────────────────────────────────
 
 def login_page():
@@ -300,6 +350,11 @@ def login_page():
             </div>
         </div>
         """, unsafe_allow_html=True)
+
+        # Mensaje post-logout (por ejemplo, cuando require_admin() expulsa al usuario)
+        post_logout_msg = st.session_state.pop("flash_post_logout", None)
+        if post_logout_msg:
+            st.warning(f"🔒 {post_logout_msg}")
 
         st.markdown("")
         email = st.text_input("📧 Email", placeholder="tu@tyradvisor.com")
@@ -324,7 +379,9 @@ def login_page():
                         if role.data and role.data.get("rol") == "admin":
                             st.session_state["authenticated"] = True
                             st.session_state["user_email"] = email
+                            st.session_state["user_id"] = user_id  # usado por require_admin() para revalidar
                             st.session_state["jwt"] = auth.session.access_token
+                            st.session_state["last_role_check"] = time.time()
                             st.success("✅ ¡Bienvenido!")
                             st.rerun()
                         else:
@@ -1064,6 +1121,12 @@ def main():
     if not st.session_state.get("authenticated"):
         login_page()
         return
+
+    # SECURITY: revalidar que el rol admin sigue vigente en la BD.
+    # Si el rol fue revocado, esta llamada limpia la sesión y hace rerun() al login.
+    require_admin()
+    if not st.session_state.get("authenticated"):
+        return  # require_admin() ya hizo el rerun, este return es defensa en profundidad
 
     # Sidebar
     with st.sidebar:
