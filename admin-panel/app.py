@@ -814,7 +814,36 @@ def seccion_licencias():
                     st.rerun()
 
                 except Exception as e:
-                    st.error(f"Error al emitir licencia: {e}")
+                    err_msg = str(e)
+                    if "User not allowed" in err_msg or "not_admin" in err_msg or "User not found" in err_msg:
+                        st.error(
+                            "❌ Permisos insuficientes para crear usuarios.\n\n"
+                            "**Causa probable**: el `SUPABASE_SERVICE_ROLE_KEY` configurado en "
+                            "Streamlit Cloud → Settings → Secrets no es el correcto "
+                            "(podría estar usando el ANON_KEY en su lugar).\n\n"
+                            "**Solución**: verifica que el valor de `SUPABASE_SERVICE_ROLE_KEY` "
+                            "en los secrets coincida con el que ves en Supabase Dashboard → "
+                            "Project Settings → API → `service_role` key (NO el `anon` key)."
+                        )
+                        # Diagnóstico no-secreto: decodificar el role del JWT actualmente activo
+                        try:
+                            import base64, json
+                            payload_b64 = SUPABASE_KEY.split(".")[1]
+                            payload_b64 += "=" * (-len(payload_b64) % 4)
+                            payload = json.loads(base64.urlsafe_b64decode(payload_b64))
+                            current_role = payload.get("role", "desconocido")
+                            st.warning(f"🔍 Diagnóstico: el cliente Supabase está usando rol `{current_role}` (debería ser `service_role`).")
+                        except Exception:
+                            pass
+                    elif "already registered" in err_msg.lower() or "already exists" in err_msg.lower() or "duplicate" in err_msg.lower():
+                        st.error(
+                            f"❌ El email **{cliente['contacto_email']}** ya tiene un usuario en Supabase Auth.\n\n"
+                            "Opciones:\n"
+                            "- Usa otro email\n"
+                            "- O elimina el usuario existente desde Supabase Dashboard → Authentication → Users"
+                        )
+                    else:
+                        st.error(f"❌ Error al emitir licencia: {err_msg[:300]}")
 
 # ── SECCIÓN: ACTIVACIONES ─────────────────────────────────────
 
