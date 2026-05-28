@@ -27,6 +27,38 @@ function corsHeadersFor(req: Request): Record<string, string> {
   return headers;
 }
 
+// SECURITY: Escape HTML special characters in user-controlled data before
+// interpolating into email templates. Without this, a client whose
+// razon_social contains markup (e.g. "<script>") would either break the
+// email rendering or — worse — execute in mail clients that run scripts.
+function htmlEscape(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Wrap an arbitrary template data object so every read goes through
+// htmlEscape(). Keeps the template literals readable (`${d.name}`) while
+// guaranteeing escaping at the point of interpolation.
+//
+// Non-string values (number, boolean) are returned as-is so templates can
+// still do `data.max_skus === -1` or `data.max_skus.toLocaleString('es-CL')`.
+function safeData(data: Record<string, unknown>): Record<string, any> {
+  return new Proxy({} as Record<string, any>, {
+    get(_target, prop) {
+      if (typeof prop !== "string") return "";
+      const val = data[prop];
+      if (val === null || val === undefined) return "";
+      if (typeof val === "string") return htmlEscape(val);
+      return val; // numbers, booleans: passthrough
+    },
+  });
+}
+
 // Templates de email
 const templates = {
 
@@ -213,7 +245,10 @@ serve(async (req) => {
       );
     }
 
-    const { subject, html } = templateFn({ nombre: to_name, ...data });
+    // SECURITY: wrap with safeData so any string field is HTML-escaped at
+    // interpolation time. Numbers/booleans pass through so .toLocaleString()
+    // and === comparisons keep working.
+    const { subject, html } = templateFn(safeData({ nombre: to_name, ...data }));
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
