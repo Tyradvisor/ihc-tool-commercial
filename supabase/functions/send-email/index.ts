@@ -2,10 +2,30 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// SECURITY: Only the admin panel(s) should be able to invoke send-email.
+// We do not use `*` here because that would let any origin (including a
+// malicious site abusing a stolen admin JWT) trigger emails on our behalf.
+const ALLOWED_ORIGINS = new Set([
+  "https://ihc-tool-commercial.streamlit.app",
+  "https://ihc-tool-commercial-v2.streamlit.app",
+  "http://localhost:8501",
+  "http://127.0.0.1:8501",
+]);
+
+function corsHeadersFor(req: Request): Record<string, string> {
+  const origin = req.headers.get("Origin") || "";
+  // Echo the origin back only if it's in our whitelist. If the call has no
+  // Origin header (e.g. server-to-server testing with curl), we omit the
+  // Allow-Origin entirely — the request still works but browsers won't be
+  // able to read the response cross-origin.
+  const allowOrigin = ALLOWED_ORIGINS.has(origin) ? origin : "";
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Vary": "Origin",
+  };
+  if (allowOrigin) headers["Access-Control-Allow-Origin"] = allowOrigin;
+  return headers;
+}
 
 // Templates de email
 const templates = {
@@ -131,7 +151,7 @@ const templates = {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeadersFor(req) });
   }
 
   try {
@@ -140,7 +160,7 @@ serve(async (req) => {
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
         JSON.stringify({ ok: false, error: "Token requerido para enviar emails." }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 401, headers: { ...corsHeadersFor(req), "Content-Type": "application/json" } }
       );
     }
     const token = authHeader.replace("Bearer ", "");
@@ -156,7 +176,7 @@ serve(async (req) => {
     if (userError || !userData?.user) {
       return new Response(
         JSON.stringify({ ok: false, error: "Token inválido o expirado." }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 401, headers: { ...corsHeadersFor(req), "Content-Type": "application/json" } }
       );
     }
     const userId = userData.user.id;
@@ -172,7 +192,7 @@ serve(async (req) => {
     if (roleError || !userRole || userRole.rol !== "admin") {
       return new Response(
         JSON.stringify({ ok: false, error: "Acceso denegado. Solo admins pueden enviar emails." }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 403, headers: { ...corsHeadersFor(req), "Content-Type": "application/json" } }
       );
     }
 
@@ -181,7 +201,7 @@ serve(async (req) => {
     if (!template || !to_email) {
       return new Response(
         JSON.stringify({ ok: false, error: "template y to_email son requeridos" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeadersFor(req), "Content-Type": "application/json" } }
       );
     }
 
@@ -189,7 +209,7 @@ serve(async (req) => {
     if (!templateFn) {
       return new Response(
         JSON.stringify({ ok: false, error: `Template '${template}' no existe` }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeadersFor(req), "Content-Type": "application/json" } }
       );
     }
 
@@ -215,20 +235,20 @@ serve(async (req) => {
       console.error("Resend error:", result);
       return new Response(
         JSON.stringify({ ok: false, error: result }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...corsHeadersFor(req), "Content-Type": "application/json" } }
       );
     }
 
     return new Response(
       JSON.stringify({ ok: true, id: result.id }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeadersFor(req), "Content-Type": "application/json" } }
     );
 
   } catch (err) {
     console.error("Error en send-email:", err);
     return new Response(
       JSON.stringify({ ok: false, error: "Error interno" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeadersFor(req), "Content-Type": "application/json" } }
     );
   }
 });
