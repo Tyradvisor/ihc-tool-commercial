@@ -8,22 +8,48 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Rate limiting en memoria (se resetea con cada cold start)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+// Rate limit policy: max 5 failed attempts per IP in a 5-minute window.
+// We persist attempts in the intentos_login table so the limit survives
+// cold starts (the previous in-memory Map was wiped every ~1-2 min).
+const RATE_LIMIT_WINDOW_MIN = 5;
+const RATE_LIMIT_MAX_ATTEMPTS = 5;
 
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const windowMs = 5 * 60 * 1000; // 5 minutos
-  const maxAttempts = 5;
+async function checkRateLimit(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  ip: string,
+): Promise<boolean> {
+  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MIN * 60 * 1000).toISOString();
 
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + windowMs });
-    return true; // OK
+  const { count, error } = await supabaseAdmin
+    .from("intentos_login")
+    .select("id", { count: "exact", head: true })
+    .eq("ip", ip)
+    .eq("exitoso", false)
+    .gte("intentado_at", windowStart);
+
+  if (error) {
+    // Fail-open: if the rate limit table is unreachable we let the request
+    // through rather than locking out legitimate users. The Edge Function
+    // itself logs the error, so we still notice if this breaks.
+    console.error("rate limit check failed:", error);
+    return true;
   }
-  if (entry.count >= maxAttempts) return false; // Bloqueado
-  entry.count++;
-  return true; // OK
+
+  return (count ?? 0) < RATE_LIMIT_MAX_ATTEMPTS;
+}
+
+async function logLoginAttempt(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  ip: string,
+  email: string | null,
+  exitoso: boolean,
+): Promise<void> {
+  try {
+    await supabaseAdmin.from("intentos_login").insert({ ip, email, exitoso });
+  } catch (e) {
+    // Logging failures shouldn't break the auth flow.
+    console.error("logLoginAttempt failed:", e);
+  }
 }
 
 serve(async (req) => {
@@ -33,9 +59,17 @@ serve(async (req) => {
   }
 
   try {
-    // Rate limiting por IP
     const clientIp = req.headers.get("x-forwarded-for") ?? "unknown";
-    if (!checkRateLimit(clientIp)) {
+
+    // Cliente Supabase con service role (acceso total). Lo creamos antes
+    // del rate limit check porque ese check también consulta la BD.
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // Rate limiting persistente por IP (sobrevive cold starts).
+    if (!(await checkRateLimit(supabaseAdmin, clientIp))) {
       return new Response(
         JSON.stringify({ ok: false, code: "RATE_LIMITED", message: "Demasiados intentos. Espera 5 minutos." }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -51,12 +85,6 @@ serve(async (req) => {
       );
     }
 
-    // Cliente Supabase con service role (acceso total)
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
     // 1. Autenticar con Supabase Auth
     const { data: authData, error: authError } = await supabaseAdmin.auth.signInWithPassword({
       email,
@@ -64,7 +92,8 @@ serve(async (req) => {
     });
 
     if (authError || !authData.user) {
-      // Registrar intento fallido
+      // Registrar intento fallido — afecta el rate limit y queda en auditoría.
+      await logLoginAttempt(supabaseAdmin, clientIp, email, false);
       await supabaseAdmin.from("eventos_licencia").insert({
         tipo: "login_falla",
         detalle: { email, motivo: "credenciales_invalidas" },
@@ -205,13 +234,15 @@ serve(async (req) => {
       key
     );
 
-    // 7. Registrar evento validacion_ok
+    // 7. Registrar evento validacion_ok + intento exitoso (para auditoría
+    // de intentos exitosos por IP, aunque no cuente para el rate limit).
     await supabaseAdmin.from("eventos_licencia").insert({
       licencia_id: licencia.id,
       tipo: "validacion_ok",
       detalle: { fingerprint, plan: licencia.plan_id },
       ip: clientIp,
     });
+    await logLoginAttempt(supabaseAdmin, clientIp, email, true);
 
     // 8. Respuesta exitosa
     return new Response(
