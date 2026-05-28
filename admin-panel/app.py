@@ -691,26 +691,90 @@ def seccion_licencias():
             sel = st.selectbox("Selecciona licencia", list(lic_ids.keys()))
             lic_id = lic_ids[sel]
 
-            col1, col2, col3 = st.columns(3)
+            # Flash message del intento anterior (sobrevive al rerun)
+            flash_lic = st.session_state.pop("flash_gestionar_licencia", None)
+            if flash_lic:
+                kind, text = flash_lic
+                getattr(st, kind, st.info)(text)
+
+            col1, col2, col3, col4 = st.columns(4)
             with col1:
-                if st.button("⏸ Suspender", use_container_width=True):
+                if st.button("⏸ Suspender", use_container_width=True, key="btn_suspender_lic"):
                     sb.table("licencias").update({"estado":"suspendida"}).eq("id", lic_id).execute()
                     sb.table("eventos_licencia").insert({"licencia_id": lic_id, "tipo": "suspension"}).execute()
-                    st.success("Licencia suspendida.")
+                    st.session_state["flash_gestionar_licencia"] = ("success", "Licencia suspendida.")
                     st.rerun()
             with col2:
-                if st.button("▶ Reactivar", use_container_width=True):
+                if st.button("▶ Reactivar", use_container_width=True, key="btn_reactivar_lic"):
                     sb.table("licencias").update({"estado":"activa"}).eq("id", lic_id).execute()
                     sb.table("eventos_licencia").insert({"licencia_id": lic_id, "tipo": "reactivacion"}).execute()
-                    st.success("Licencia reactivada.")
+                    st.session_state["flash_gestionar_licencia"] = ("success", "Licencia reactivada.")
                     st.rerun()
             with col3:
-                if st.button("🚫 Revocar", use_container_width=True, type="primary"):
-                    confirmado = st.checkbox("Confirmo que quiero REVOCAR esta licencia (irreversible)")
-                    if confirmado:
+                # Revocar: confirmación en dos pasos vía session_state
+                if st.button("🚫 Revocar", use_container_width=True, type="secondary", key="btn_revocar_lic"):
+                    st.session_state["licencia_a_revocar"] = lic_id
+                    st.rerun()
+            with col4:
+                # Eliminar definitivo (borra fila + cascada de relacionados)
+                if st.button("🗑️ Eliminar", use_container_width=True, type="secondary", key="btn_eliminar_lic"):
+                    st.session_state["licencia_a_eliminar"] = lic_id
+                    st.rerun()
+
+            # Bloque confirmación REVOCAR (mantiene la fila, solo cambia estado)
+            if st.session_state.get("licencia_a_revocar") == lic_id:
+                st.warning(f"⚠️ ¿Confirmas REVOCAR esta licencia? Cambia el estado a 'revocada' pero conserva el registro.")
+                rc1, rc2 = st.columns(2)
+                with rc1:
+                    if st.button("✅ Sí, revocar", type="primary", use_container_width=True, key="confirm_revocar_lic"):
                         sb.table("licencias").update({"estado":"revocada"}).eq("id", lic_id).execute()
                         sb.table("eventos_licencia").insert({"licencia_id": lic_id, "tipo": "revocacion"}).execute()
-                        st.warning("Licencia revocada.")
+                        st.session_state.pop("licencia_a_revocar", None)
+                        st.session_state["flash_gestionar_licencia"] = ("warning", "Licencia revocada.")
+                        st.rerun()
+                with rc2:
+                    if st.button("✖ Cancelar", use_container_width=True, key="cancel_revocar_lic"):
+                        st.session_state.pop("licencia_a_revocar", None)
+                        st.rerun()
+
+            # Bloque confirmación ELIMINAR (borra fila + activaciones + eventos + auth user)
+            if st.session_state.get("licencia_a_eliminar") == lic_id:
+                st.error(
+                    "⚠️ **ELIMINAR DEFINITIVO**\n\n"
+                    "Esto borra la licencia, sus activaciones, eventos y el usuario "
+                    "de Supabase Auth asociado. **No se puede deshacer.**"
+                )
+                ec1, ec2 = st.columns(2)
+                with ec1:
+                    if st.button("🗑️ Sí, eliminar todo", type="primary", use_container_width=True, key="confirm_eliminar_lic"):
+                        try:
+                            # Obtener auth_user_id antes de borrar la licencia
+                            lic_row = sb.table("licencias").select("auth_user_id").eq("id", lic_id).single().execute().data
+                            auth_user_id = lic_row.get("auth_user_id") if lic_row else None
+
+                            # Borrar dependencias en orden
+                            sb.table("eventos_licencia").delete().eq("licencia_id", lic_id).execute()
+                            sb.table("activaciones").delete().eq("licencia_id", lic_id).execute()
+                            sb.table("licencias").delete().eq("id", lic_id).execute()
+                            if auth_user_id:
+                                sb.table("user_roles").delete().eq("user_id", auth_user_id).execute()
+                                # Eliminar el user de auth vía REST admin
+                                requests.delete(
+                                    f"{SUPABASE_URL}/auth/v1/admin/users/{auth_user_id}",
+                                    headers={
+                                        "apikey": SUPABASE_KEY,
+                                        "Authorization": f"Bearer {SUPABASE_KEY}",
+                                    },
+                                    timeout=15,
+                                )
+                            st.session_state.pop("licencia_a_eliminar", None)
+                            st.session_state["flash_gestionar_licencia"] = ("success", "✅ Licencia y datos relacionados eliminados.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Error al eliminar: {str(e)[:300]}")
+                with ec2:
+                    if st.button("✖ Cancelar", use_container_width=True, key="cancel_eliminar_lic"):
+                        st.session_state.pop("licencia_a_eliminar", None)
                         st.rerun()
         else:
             st.info("No hay licencias aún.")
