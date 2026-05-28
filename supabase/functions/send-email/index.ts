@@ -1,7 +1,6 @@
 // supabase/functions/send-email/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { verify } from "https://deno.land/x/djwt@v2.8/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -146,39 +145,31 @@ serve(async (req) => {
     }
     const token = authHeader.replace("Bearer ", "");
 
-    // SECURITY: Verify JWT
-    const jwtSecret = Deno.env.get("JWT_SECRET")!;
-    const key = await crypto.subtle.importKey(
-      "raw",
-      new TextEncoder().encode(jwtSecret),
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["verify"]
-    );
-
-    let payload: any;
-    try {
-      payload = await verify(token, key);
-    } catch {
-      return new Response(
-        JSON.stringify({ ok: false, error: "Token inválido o expirado." }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // SECURITY: Check that user is admin
+    // SECURITY: Validate JWT via Supabase Auth API (does not depend on a local JWT_SECRET,
+    // resists secret rotation, returns the user record directly).
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
+    if (userError || !userData?.user) {
+      return new Response(
+        JSON.stringify({ ok: false, error: "Token inválido o expirado." }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const userId = userData.user.id;
+
+    // SECURITY: Check that user is admin
+    // (DB column is "rol" in Spanish, not "role")
     const { data: userRole, error: roleError } = await supabaseAdmin
       .from("user_roles")
-      .select("role")
-      .eq("user_id", payload.sub)
+      .select("rol")
+      .eq("user_id", userId)
       .single();
 
-    if (roleError || !userRole || userRole.role !== "admin") {
+    if (roleError || !userRole || userRole.rol !== "admin") {
       return new Response(
         JSON.stringify({ ok: false, error: "Acceso denegado. Solo admins pueden enviar emails." }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
