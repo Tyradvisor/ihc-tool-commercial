@@ -152,11 +152,13 @@
 
   async function callValidateLicense(email, password) {
     const fingerprint = await generateFingerprint();
+    // Edge Functions require Bearer authorization (not just apikey).
+    // Without this we get 401 'Missing authorization header'.
     const res = await fetch(API_BASE + '/validate-license', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'apikey': ANON_KEY
+        'Authorization': 'Bearer ' + ANON_KEY
       },
       body: JSON.stringify({ email, password, fingerprint, user_agent: navigator.userAgent })
     });
