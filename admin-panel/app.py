@@ -719,6 +719,19 @@ def seccion_licencias():
     with tabs[1]:
         st.subheader("Emitir nueva licencia")
 
+        # Flash messages del intento anterior (sobreviven al st.rerun)
+        flash = st.session_state.pop("flash_emitir_licencia", None)
+        if flash:
+            kind, text = flash["main"]
+            if kind == "success":
+                st.success(text)
+            elif kind == "warning":
+                st.warning(text)
+            else:
+                st.error(text)
+            st.info(f"📧 Email: **{flash['email']}**  ·  🔑 Contraseña temporal: **{flash['password']}**")
+            st.caption("⚠️ Guarda la contraseña ahora — no se mostrará otra vez.")
+
         # Cargar clientes para selector
         clientes_res = sb.table("clientes").select("id, razon_social, contacto_email, contacto_nombre").execute()
         clientes = clientes_res.data or []
@@ -804,6 +817,7 @@ def seccion_licencias():
                     plan_data = sb.table("planes").select("*").eq("id", plan).single().execute().data
 
                     # 6. Enviar email si se solicitó
+                    email_status = None
                     if enviar_email:
                         email_result = send_email(
                             template="bienvenida",
@@ -820,13 +834,18 @@ def seccion_licencias():
                             jwt_token=st.session_state.get("jwt","")
                         )
                         if email_result.get("ok"):
-                            st.success(f"✅ Licencia emitida y email enviado a {cliente['contacto_email']}")
+                            email_status = ("success", f"✅ Licencia emitida y email enviado a {cliente['contacto_email']}")
                         else:
-                            st.warning(f"⚠️ Licencia creada pero el email falló: {email_result.get('error')}")
+                            email_status = ("warning", f"⚠️ Licencia creada pero el email falló: {email_result.get('error') or email_result}")
                     else:
-                        st.success(f"✅ Licencia emitida. ID: {lic_id[:8]}...")
+                        email_status = ("success", f"✅ Licencia emitida. ID: {lic_id[:8]}...")
 
-                    st.info(f"Contraseña temporal: **{password_temp}**")
+                    # Flash messages que sobreviven al rerun (st.rerun borra widgets como st.success/info)
+                    st.session_state["flash_emitir_licencia"] = {
+                        "main": email_status,
+                        "password": password_temp,
+                        "email": cliente["contacto_email"],
+                    }
                     st.rerun()
 
                 except Exception as e:
