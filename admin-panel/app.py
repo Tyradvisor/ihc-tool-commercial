@@ -748,13 +748,29 @@ def seccion_licencias():
             if submitted:
                 cliente = cliente_map[cliente_sel]
                 try:
-                    # 1. Crear usuario en Supabase Auth
-                    auth_user = sb.auth.admin.create_user({
-                        "email": cliente["contacto_email"],
-                        "password": password_temp,
-                        "email_confirm": True,
-                    })
-                    auth_user_id = auth_user.user.id
+                    # 1. Crear usuario en Supabase Auth via REST directo
+                    # (bypassa bugs conocidos del SDK con auth.admin.create_user)
+                    create_user_resp = requests.post(
+                        f"{SUPABASE_URL}/auth/v1/admin/users",
+                        headers={
+                            "apikey": SUPABASE_KEY,
+                            "Authorization": f"Bearer {SUPABASE_KEY}",
+                            "Content-Type": "application/json",
+                        },
+                        json={
+                            "email": cliente["contacto_email"],
+                            "password": password_temp,
+                            "email_confirm": True,
+                        },
+                        timeout=15,
+                    )
+                    if create_user_resp.status_code not in (200, 201):
+                        body = create_user_resp.text
+                        # Propagar mensaje claro al except de abajo
+                        raise Exception(f"[{create_user_resp.status_code}] {body[:300]}")
+                    auth_user_id = create_user_resp.json().get("id")
+                    if not auth_user_id:
+                        raise Exception(f"Respuesta sin user id: {create_user_resp.text[:200]}")
 
                     # 2. Asignar rol de usuario (columna real en BD: "rol")
                     sb.table("user_roles").insert({
