@@ -772,9 +772,9 @@ def seccion_licencias():
                     if not auth_user_id:
                         raise Exception(f"Respuesta sin user id: {create_user_resp.text[:200]}")
 
-                    # 2. Asignar rol de usuario (columna real en BD: "rol")
+                    # 2. Asignar rol de cliente (CHECK constraint solo permite 'admin' o 'cliente')
                     sb.table("user_roles").insert({
-                        "user_id": auth_user_id, "rol": "user"
+                        "user_id": auth_user_id, "rol": "cliente"
                     }).execute()
 
                     # 3. Crear licencia
