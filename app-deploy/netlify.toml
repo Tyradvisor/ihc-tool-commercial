@@ -1,0 +1,51 @@
+# Netlify config for IHC Tool™ client app (the tool itself, not the landing).
+#
+# Hosted separately from the landing because:
+#   - Different CSP requirements (the client app loads Chart.js + SheetJS
+#     from CDNs and talks to Supabase Edge Functions).
+#   - Different cache strategy (the HTML must stay fresh so license fixes
+#     reach the client quickly; the landing can cache its HTML longer).
+#   - Lets us point a dedicated subdomain (app.tyradvisor.com) at this
+#     deploy without touching the marketing site.
+
+[build]
+  publish = "."
+  command = ""
+
+# ──────────────────────────────────────────────────────────────
+# Security headers
+# ──────────────────────────────────────────────────────────────
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+    X-Frame-Options           = "DENY"
+    X-Content-Type-Options    = "nosniff"
+    Referrer-Policy           = "strict-origin-when-cross-origin"
+    Permissions-Policy        = "camera=(), microphone=(), geolocation=()"
+
+    # CSP tuned to what app.html actually needs:
+    #   - Chart.js from jsdelivr
+    #   - SheetJS (xlsx parser) from cdn.sheetjs.com
+    #   - Talks to our Supabase project for validate-license, heartbeat,
+    #     send-email and auth password change.
+    #   - Inline scripts/styles are allowed because app.html embeds both.
+    #     Once we refactor to external files we can tighten this.
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://ikdrnispjakjaxqwzhaf.supabase.co; form-action 'self';"
+
+# ──────────────────────────────────────────────────────────────
+# Cache strategy
+# ──────────────────────────────────────────────────────────────
+# HTML: short cache so license fixes reach clients quickly.
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=300, must-revalidate"
+
+# Versioned/static assets can be cached longer; if we change license.min.js
+# we can either bust manually or move to hash-named files later.
+[[headers]]
+  for = "/client/*"
+  [headers.values]
+    Cache-Control = "public, max-age=3600, must-revalidate"
