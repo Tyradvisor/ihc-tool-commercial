@@ -133,6 +133,54 @@ p  { margin: 0 0 16px; }
   letter-spacing: -0.02em;
 }
 .brand span { color: var(--cyan); }
+
+/* Brand de dos líneas (TyrAdvisor sombrilla + IHC Tool™ producto destacado).
+   Se usa solo en nav y footer. */
+.brand-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 1;
+}
+.brand-block:hover { color: var(--navy); }
+.logo-mark { display: inline-flex; }
+.logo-mark svg { display: block; }
+.brand-stack { display: inline-flex; flex-direction: column; gap: 2px; }
+.brand-parent {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+.brand-product {
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--navy);
+  letter-spacing: -0.02em;
+}
+.brand-product em { color: var(--cyan); font-style: normal; }
+
+/* Versión light: se usa sobre fondos oscuros (footer) */
+.brand-stack-light {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.brand-parent-light {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.5);
+}
+.brand-product-light {
+  font-size: 18px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+.brand-product-light em { color: var(--cyan); font-style: normal; }
 .nav-links {
   display: flex;
   gap: 32px;
@@ -417,6 +465,77 @@ section { padding: 80px 0; }
 .plan-cta { width: 100%; }
 
 /* ════════════════════════════════════════════════════════════
+   SERVICIOS (add-on de toma de inventario en terreno)
+   ──────────────────────────────────────────────────────────── */
+.servicios { background: var(--bg-2); }
+.servicios-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+.servicios-copy h2 { margin-bottom: 20px; }
+.servicios-copy p {
+  font-size: 16px;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+.servicios-copy p.muted {
+  color: var(--muted);
+  font-size: 15px;
+  margin-bottom: 28px;
+}
+.kicker {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  background: rgba(0,180,216,0.1);
+  padding: 6px 12px;
+  border-radius: 999px;
+  margin-bottom: 16px;
+}
+
+.servicios-card {
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  box-shadow: var(--shadow);
+  position: relative;
+}
+.servicios-icon {
+  font-size: 42px;
+  margin-bottom: 12px;
+}
+.servicios-card h3 {
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+.servicios-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+}
+.servicios-features li {
+  padding: 8px 0;
+  font-size: 14px;
+  color: var(--text);
+}
+.servicios-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+/* ════════════════════════════════════════════════════════════
    FAQ
    ──────────────────────────────────────────────────────────── */
 .faq { background: var(--bg-2); }
@@ -571,8 +690,10 @@ section { padding: 80px 0; }
   .problema-grid,
   .features-grid,
   .pasos-grid,
-  .planes-grid {
+  .planes-grid,
+  .servicios-grid {
     grid-template-columns: 1fr;
+    gap: 32px;
   }
   .plan-card.plan-popular { transform: none; }  /* sin scale en mobile */
 

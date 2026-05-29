@@ -24,7 +24,19 @@
   <!-- ════════════════════════════════════════════════ -->
   <header class="nav">
     <div class="container nav-inner">
-      <a href="#top" class="brand">IHC <span>Tool™</span></a>
+      <a href="#top" class="brand brand-block">
+        <!-- TODO: reemplazar el SVG inline por el logo SVG/PNG definitivo de TyrAdvisor cuando esté listo -->
+        <span class="logo-mark">
+          <svg viewBox="0 0 32 32" width="32" height="32" aria-hidden="true">
+            <rect width="32" height="32" rx="7" fill="#0A1628"/>
+            <text x="16" y="22" font-family="Segoe UI, system-ui, sans-serif" font-size="20" font-weight="900" fill="#00B4D8" text-anchor="middle">T</text>
+          </svg>
+        </span>
+        <span class="brand-stack">
+          <span class="brand-parent">TyrAdvisor</span>
+          <span class="brand-product">IHC <em>Tool™</em></span>
+        </span>
+      </a>
       <nav class="nav-links">
         <a href="#solucion">Producto</a>
         <a href="#planes">Planes</a>
@@ -186,8 +198,7 @@
             <li>✓ Hasta <strong>5.000 SKUs</strong> por análisis</li>
             <li>✓ 1 dispositivo</li>
             <li>✓ Health Score y secciones básicas</li>
-            <li class="off">— Exportación Excel</li>
-            <li class="off">— Causas raíz</li>
+            <li>✓ Exportación a Excel</li>
           </ul>
           <a href="#contacto" class="btn btn-ghost plan-cta" data-plan="starter">Comenzar</a>
         </div>
@@ -219,6 +230,47 @@
           <a href="#contacto" class="btn btn-ghost plan-cta" data-plan="enterprise">Cotizar</a>
         </div>
 
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════ -->
+  <!-- SERVICIO ADICIONAL: TOMA DE INVENTARIO          -->
+  <!-- ════════════════════════════════════════════════ -->
+  <section class="servicios" id="servicios">
+    <div class="container">
+      <div class="servicios-grid">
+        <div class="servicios-copy">
+          <span class="kicker">Servicio adicional</span>
+          <h2>¿Necesitas también el levantamiento físico?</h2>
+          <p>
+            Antes de analizar la salud de tu inventario necesitas datos confiables.
+            Si no tienes una toma reciente o tu IRA está demasiado bajo para confiar
+            en el sistema, nuestro equipo ejecuta la <strong>toma de inventario en
+            terreno</strong> con metodología auditable: conteos físicos, conciliación
+            contra sistema y reporte de diferencias.
+          </p>
+          <p class="muted">
+            Quedas listo para correr IHC Tool™ apenas terminamos en bodega.
+          </p>
+          <a href="#contacto" class="btn btn-primary plan-cta" data-plan="toma-inventario">
+            Solicitar cotización
+          </a>
+        </div>
+        <div class="servicios-visual">
+          <div class="servicios-card">
+            <div class="servicios-icon">📋</div>
+            <h3>Toma de inventario en terreno</h3>
+            <ul class="servicios-features">
+              <li>✓ Conteos físicos por equipos certificados</li>
+              <li>✓ Conciliación contra sistema</li>
+              <li>✓ Reporte de diferencias auditable</li>
+              <li>✓ Archivos listos para IHC Tool™</li>
+              <li>✓ Cobertura nacional</li>
+            </ul>
+            <p class="servicios-price">Por cotización</p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -337,6 +389,7 @@
             <option value="starter">Starter</option>
             <option value="pro">Pro</option>
             <option value="enterprise">Enterprise</option>
+            <option value="toma-inventario">Toma de inventario en terreno</option>
           </select>
         </label>
 
@@ -362,8 +415,11 @@
   <footer class="footer">
     <div class="container footer-inner">
       <div class="footer-brand">
-        <div class="brand brand-light">IHC <span>Tool™</span></div>
-        <p>por TyrAdvisor</p>
+        <div class="brand brand-light brand-stack-light">
+          <span class="brand-parent-light">TyrAdvisor</span>
+          <span class="brand-product-light">IHC <em>Tool™</em></span>
+        </div>
+        <p>Inventory Health Check · Santiago, Chile</p>
       </div>
       <div class="footer-col">
         <h4>Producto</h4>
