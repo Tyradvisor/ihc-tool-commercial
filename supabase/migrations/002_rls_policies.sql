@@ -1,198 +1,211 @@
 -- 002_rls_policies.sql
--- IHC Tool™ Comercial - Row Level Security (RLS) Policies
--- Created: 2026-05-26
+-- IHC Tool™ Comercial - Row Level Security (RLS)
+--
+-- IMPORTANT: This file was rewritten on 2026-05-28 to match the actual
+-- state of the database (which had drifted from the original 001/002
+-- migrations during development). The original version referenced a
+-- "role" column and "'user'" value, but the live schema uses "rol" and
+-- ('admin' | 'cliente').
+--
+-- The audit performed in security review #10 confirmed:
+--  - RLS is enabled on all public tables
+--  - Authorization is centralized in the es_admin() helper function
+--  - Edge Functions bypass RLS via SUPABASE_SERVICE_ROLE_KEY
+--
+-- This file is the canonical source-of-truth going forward. If you change
+-- anything in the Supabase Dashboard, also update this file and commit it.
 
--- Enable RLS on all tables
-ALTER TABLE clientes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE planes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE licencias ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activaciones ENABLE ROW LEVEL SECURITY;
-ALTER TABLE eventos_licencia ENABLE ROW LEVEL SECURITY;
-ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+-- ============================================================
+-- HELPER FUNCTION: es_admin()
+-- ============================================================
+-- Returns true iff the currently authenticated user has rol = 'admin'.
+-- Used by every "admin-only" policy below.
 
--- ============================================
--- CLIENTES POLICIES
--- ============================================
+CREATE OR REPLACE FUNCTION public.es_admin()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $function$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles
+    WHERE user_id = auth.uid()
+      AND rol = 'admin'
+  );
+$function$;
 
--- Admins can view all clients
-CREATE POLICY "Admins can view all clients" ON clientes
-  FOR SELECT USING (
-    auth.uid()::text IN (
-      SELECT user_id FROM user_roles WHERE role = 'admin'
+COMMENT ON FUNCTION public.es_admin() IS
+  'Returns true if the authenticated user has admin role. Used by RLS policies on all admin-restricted operations.';
+
+-- ============================================================
+-- ENABLE RLS ON ALL TABLES
+-- ============================================================
+
+ALTER TABLE public.clientes          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.planes            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.licencias         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.activaciones      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.eventos_licencia  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_roles        ENABLE ROW LEVEL SECURITY;
+
+-- ============================================================
+-- CLIENTES
+-- ============================================================
+-- Admins can do anything; users can read the client linked to their licencia.
+
+DROP POLICY IF EXISTS clientes_select         ON public.clientes;
+DROP POLICY IF EXISTS clientes_modify         ON public.clientes;
+DROP POLICY IF EXISTS admins_delete_clientes  ON public.clientes;
+
+CREATE POLICY clientes_select ON public.clientes
+  FOR SELECT
+  USING (
+    es_admin()
+    OR id IN (
+      SELECT cliente_id FROM public.licencias
+      WHERE auth_user_id = auth.uid()
     )
   );
 
--- Users can view their own client (via licencias relationship)
-CREATE POLICY "Users can view their own client" ON clientes
-  FOR SELECT USING (
-    id IN (
-      SELECT cliente_id FROM licencias
-      WHERE auth_user_id = auth.uid()::text
+CREATE POLICY clientes_modify ON public.clientes
+  FOR ALL
+  USING (es_admin())
+  WITH CHECK (es_admin());
+
+CREATE POLICY admins_delete_clientes ON public.clientes
+  FOR DELETE
+  USING (es_admin());
+
+-- ============================================================
+-- PLANES
+-- ============================================================
+-- Plans are public catalog data; anyone (even unauthenticated) can read.
+-- Only admins can mutate them.
+
+DROP POLICY IF EXISTS planes_select  ON public.planes;
+DROP POLICY IF EXISTS planes_modify  ON public.planes;
+
+CREATE POLICY planes_select ON public.planes
+  FOR SELECT
+  USING (true);
+
+CREATE POLICY planes_modify ON public.planes
+  FOR ALL
+  USING (es_admin())
+  WITH CHECK (es_admin());
+
+-- ============================================================
+-- LICENCIAS
+-- ============================================================
+-- Admins can do everything; users can read their own license.
+
+DROP POLICY IF EXISTS licencias_select          ON public.licencias;
+DROP POLICY IF EXISTS licencias_modify          ON public.licencias;
+DROP POLICY IF EXISTS admins_insert_licencias   ON public.licencias;
+DROP POLICY IF EXISTS admins_update_licencias   ON public.licencias;
+
+CREATE POLICY licencias_select ON public.licencias
+  FOR SELECT
+  USING (
+    es_admin() OR auth_user_id = auth.uid()
+  );
+
+CREATE POLICY licencias_modify ON public.licencias
+  FOR ALL
+  USING (es_admin())
+  WITH CHECK (es_admin());
+
+CREATE POLICY admins_insert_licencias ON public.licencias
+  FOR INSERT
+  WITH CHECK (es_admin());
+
+CREATE POLICY admins_update_licencias ON public.licencias
+  FOR UPDATE
+  USING (es_admin())
+  WITH CHECK (es_admin());
+
+-- ============================================================
+-- ACTIVACIONES
+-- ============================================================
+-- Admins see everything; a user sees activaciones of their own license.
+-- Edge Functions (validate-license, heartbeat) insert/update with
+-- service_role and bypass RLS.
+
+DROP POLICY IF EXISTS activaciones_select  ON public.activaciones;
+DROP POLICY IF EXISTS activaciones_modify  ON public.activaciones;
+
+CREATE POLICY activaciones_select ON public.activaciones
+  FOR SELECT
+  USING (
+    es_admin()
+    OR licencia_id IN (
+      SELECT id FROM public.licencias WHERE auth_user_id = auth.uid()
     )
   );
 
--- Admins can update all clients
-CREATE POLICY "Admins can update all clients" ON clientes
-  FOR UPDATE USING (
-    auth.uid()::text IN (
-      SELECT user_id FROM user_roles WHERE role = 'admin'
-    )
-  );
+CREATE POLICY activaciones_modify ON public.activaciones
+  FOR ALL
+  USING (es_admin())
+  WITH CHECK (es_admin());
 
--- Admins can insert clients
-CREATE POLICY "Admins can insert clients" ON clientes
-  FOR INSERT WITH CHECK (
-    auth.uid()::text IN (
-      SELECT user_id FROM user_roles WHERE role = 'admin'
-    )
-  );
+-- ============================================================
+-- EVENTOS_LICENCIA
+-- ============================================================
+-- Admin-only reads. Inserts are blocked from RLS (only Edge Functions
+-- via service_role can write events). This prevents authenticated
+-- clients from spamming the audit log with fake events.
 
--- ============================================
--- PLANES POLICIES
--- ============================================
+DROP POLICY IF EXISTS eventos_select  ON public.eventos_licencia;
+DROP POLICY IF EXISTS eventos_insert  ON public.eventos_licencia;
 
--- Everyone can view plans (they're public)
-CREATE POLICY "Everyone can view plans" ON planes
-  FOR SELECT USING (true);
+CREATE POLICY eventos_select ON public.eventos_licencia
+  FOR SELECT
+  USING (es_admin());
 
--- Only admins can manage plans
-CREATE POLICY "Admins can manage plans" ON planes
-  FOR ALL USING (
-    auth.uid()::text IN (
-      SELECT user_id FROM user_roles WHERE role = 'admin'
-    )
-  );
+-- Locked-down INSERT: only service_role (bypassing RLS) can write.
+-- See security audit ticket #17.
+CREATE POLICY eventos_insert ON public.eventos_licencia
+  FOR INSERT
+  WITH CHECK (false);
 
--- ============================================
--- LICENCIAS POLICIES
--- ============================================
+-- ============================================================
+-- USER_ROLES
+-- ============================================================
+-- Only admins can list and manage roles. Users can't even see their
+-- own row (intentional: prevents enumeration of who is admin).
 
--- Admins can view all licenses
-CREATE POLICY "Admins can view all licenses" ON licencias
-  FOR SELECT USING (
-    auth.uid()::text IN (
-      SELECT user_id FROM user_roles WHERE role = 'admin'
-    )
-  );
+DROP POLICY IF EXISTS user_roles_all  ON public.user_roles;
 
--- Users can view their own license
-CREATE POLICY "Users can view their own license" ON licencias
-  FOR SELECT USING (
-    auth_user_id = auth.uid()::text
-  );
+CREATE POLICY user_roles_all ON public.user_roles
+  FOR ALL
+  USING (es_admin())
+  WITH CHECK (es_admin());
 
--- Only admins can update licenses
-CREATE POLICY "Admins can update licenses" ON licencias
-  FOR UPDATE USING (
-    auth.uid()::text IN (
-      SELECT user_id FROM user_roles WHERE role = 'admin'
-    )
-  );
+-- ============================================================
+-- INTENTOS_LOGIN  (created in 003_persistent_rate_limit.sql)
+-- ============================================================
+-- RLS enabled with NO policies => only service_role can read/write.
+-- Edge Functions write through service_role; no client should touch it.
 
--- Only admins can insert licenses
-CREATE POLICY "Admins can insert licenses" ON licencias
-  FOR INSERT WITH CHECK (
-    auth.uid()::text IN (
-      SELECT user_id FROM user_roles WHERE role = 'admin'
-    )
-  );
+-- ============================================================
+-- NOTES ON SERVICE ROLE
+-- ============================================================
+-- Edge Functions (validate-license, heartbeat, send-email) authenticate
+-- with the service_role JWT and therefore BYPASS all the policies above.
+-- They enforce their own checks:
+--   - validate-license: rate limit on intentos_login + Supabase Auth
+--   - heartbeat: signed JWT verification + fingerprint match
+--   - send-email: Supabase Auth getUser() + es_admin() check
+--
+-- Never expose SUPABASE_SERVICE_ROLE_KEY to client code. It lives only
+-- in Edge Function secrets and in the Streamlit admin panel secrets.
 
--- ============================================
--- ACTIVACIONES POLICIES
--- ============================================
-
--- Admins can view all activations
-CREATE POLICY "Admins can view all activations" ON activaciones
-  FOR SELECT USING (
-    auth.uid()::text IN (
-      SELECT user_id FROM user_roles WHERE role = 'admin'
-    )
-  );
-
--- Users can view their own license's activations
-CREATE POLICY "Users can view their license activations" ON activaciones
-  FOR SELECT USING (
-    licencia_id IN (
-      SELECT id FROM licencias WHERE auth_user_id = auth.uid()::text
-    )
-  );
-
--- Only admins can manage activations
-CREATE POLICY "Admins can manage activations" ON activaciones
-  FOR ALL USING (
-    auth.uid()::text IN (
-      SELECT user_id FROM user_roles WHERE role = 'admin'
-    )
-  );
-
--- Service role (Edge Functions) can update activations
--- This is handled via service_role key in functions, not via RLS
-
--- ============================================
--- EVENTOS_LICENCIA POLICIES
--- ============================================
-
--- Admins can view all license events
-CREATE POLICY "Admins can view all events" ON eventos_licencia
-  FOR SELECT USING (
-    auth.uid()::text IN (
-      SELECT user_id FROM user_roles WHERE role = 'admin'
-    )
-  );
-
--- Users can view their own license's events
-CREATE POLICY "Users can view their license events" ON eventos_licencia
-  FOR SELECT USING (
-    licencia_id IN (
-      SELECT id FROM licencias WHERE auth_user_id = auth.uid()::text
-    )
-  );
-
--- Only Edge Functions (service role) can insert events
--- This is handled via service_role key in functions, not via RLS
-
--- ============================================
--- USER_ROLES POLICIES
--- ============================================
-
--- Users can view their own role
-CREATE POLICY "Users can view their own role" ON user_roles
-  FOR SELECT USING (
-    user_id = auth.uid()::text
-  );
-
--- Admins can view all roles
-CREATE POLICY "Admins can view all roles" ON user_roles
-  FOR SELECT USING (
-    auth.uid()::text IN (
-      SELECT user_id FROM user_roles WHERE role = 'admin'
-    )
-  );
-
--- Only admins can manage roles
-CREATE POLICY "Admins can manage roles" ON user_roles
-  FOR ALL USING (
-    auth.uid()::text IN (
-      SELECT user_id FROM user_roles WHERE role = 'admin'
-    )
-  );
-
--- ============================================
--- EDGE FUNCTIONS SERVICE ROLE NOTES
--- ============================================
-
--- Edge Functions use Supabase service_role_key which bypasses RLS
--- These functions use direct database access:
--- - validate-license: inserts into activaciones, licencias, eventos_licencia
--- - heartbeat: reads/updates licencias, activaciones, eventos_licencia
--- - send-email: reads user_roles for admin check
-
--- RLS policies above protect against unauthorized direct client access
--- Edge Functions maintain their own authorization (JWT validation, admin check)
-
--- ============================================
+-- ============================================================
 -- SEED DATA
--- ============================================
-
--- Note: The initial plans are seeded in 001_initial_schema.sql
--- The admin users and client data should be added via app or manual migration
+-- ============================================================
+-- The initial plans are seeded in 001_initial_schema.sql.
+-- Admin users are created manually:
+--   1. Sign up via Supabase Auth (with the desired email/password)
+--   2. INSERT INTO user_roles (user_id, rol) VALUES ('<uuid>', 'admin');
