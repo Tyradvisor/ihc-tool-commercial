@@ -145,6 +145,20 @@ p  { margin: 0 0 16px; }
 .brand-block:hover { color: var(--navy); }
 .logo-mark { display: inline-flex; }
 .logo-mark svg { display: block; }
+/* Logo image (TyrAdvisor PNG). Squared crop with object-fit so the
+   shape stays sharp at small sizes. */
+.logo-img {
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.logo-img-footer {
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+  /* Slight tint adjustment if needed in dark footer — actually the logo
+     has its own colors (navy, gold, red), no filter needed. */
+}
 .brand-stack { display: inline-flex; flex-direction: column; gap: 2px; }
 .brand-parent {
   font-size: 11px;
@@ -650,6 +664,11 @@ section { padding: 80px 0; }
   margin: 8px 0 0;
   font-size: 13px;
   color: rgba(255,255,255,0.5);
+}
+.footer-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 .footer-col h4 {
   color: #fff;
