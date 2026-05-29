@@ -338,13 +338,14 @@
   // ── UI: TOPBAR DE LICENCIA ─────────────────────────────────
 
   function renderLicenseBadge(payload, graceOffline) {
-    // Idempotente: limpia tanto el badge como el botón Mi Cuenta antes de
-    // recrearlos. Sin esto, llamar a renderLicenseBadge dos veces (lo que
-    // pasaba al cargar desde cache) duplicaba el botón Mi Cuenta en el topbar.
-    const existing = document.getElementById('ihc-license-badge');
-    if (existing) existing.remove();
-    const existingBtn = document.getElementById('ihc-btn-cuenta');
-    if (existingBtn) existingBtn.remove();
+    // Idempotente y defensivo: usa querySelectorAll para remover TODOS los
+    // elementos con esos IDs/clases, no solo el primero. getElementById
+    // solo devolvería uno aunque hubiera duplicados (porque IDs deberían
+    // ser únicos), así que esto cubre cualquier caso edge en que el
+    // navegador haya cargado el JS dos veces o un fragmento haya
+    // creado un botón antes que pudiéramos limpiar.
+    document.querySelectorAll('#ihc-license-badge').forEach(el => el.remove());
+    document.querySelectorAll('#ihc-btn-cuenta').forEach(el => el.remove());
 
     const tbRight = document.querySelector('.tb-right');
     if (!tbRight) return;

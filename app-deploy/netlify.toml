@@ -37,15 +37,17 @@
 # ──────────────────────────────────────────────────────────────
 # Cache strategy
 # ──────────────────────────────────────────────────────────────
-# HTML: short cache so license fixes reach clients quickly.
+# HTML: very short cache so license fixes reach clients quickly.
 [[headers]]
   for = "/*.html"
   [headers.values]
-    Cache-Control = "public, max-age=300, must-revalidate"
+    Cache-Control = "public, max-age=60, must-revalidate"
 
-# Versioned/static assets can be cached longer; if we change license.min.js
-# we can either bust manually or move to hash-named files later.
+# Client JS (license.min.js) is unversioned — when we change it we want
+# clients to pick up the new version within minutes, not hours. The cost
+# of a few extra requests per session is negligible compared to the
+# debugging cost of users running stale code.
 [[headers]]
   for = "/client/*"
   [headers.values]
-    Cache-Control = "public, max-age=3600, must-revalidate"
+    Cache-Control = "public, max-age=300, must-revalidate"
