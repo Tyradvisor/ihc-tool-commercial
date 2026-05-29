@@ -338,8 +338,13 @@
   // ── UI: TOPBAR DE LICENCIA ─────────────────────────────────
 
   function renderLicenseBadge(payload, graceOffline) {
+    // Idempotente: limpia tanto el badge como el botón Mi Cuenta antes de
+    // recrearlos. Sin esto, llamar a renderLicenseBadge dos veces (lo que
+    // pasaba al cargar desde cache) duplicaba el botón Mi Cuenta en el topbar.
     const existing = document.getElementById('ihc-license-badge');
     if (existing) existing.remove();
+    const existingBtn = document.getElementById('ihc-btn-cuenta');
+    if (existingBtn) existingBtn.remove();
 
     const tbRight = document.querySelector('.tb-right');
     if (!tbRight) return;
@@ -650,9 +655,9 @@
 
   // ── BOOT DE LA APP ─────────────────────────────────────────
 
-  function bootApp(payload) {
+  function bootApp(payload, graceOffline) {
     applyFeatureGating(payload);
-    renderLicenseBadge(payload, false);
+    renderLicenseBadge(payload, !!graceOffline);
     // La app original arranca desde aquí — showScreen('upload') en app.html
     if (typeof window._ihcOriginalBoot === 'function') {
       window._ihcOriginalBoot();
@@ -681,9 +686,10 @@
     const cached = loadCachedToken();
 
     if (cached) {
-      // Token en cache: arrancar app directo
-      bootApp(cached.payload);
-      renderLicenseBadge(cached.payload, cached.grace_offline);
+      // Token en cache: arrancar app directo. bootApp() ya pinta el badge
+      // y el botón Mi Cuenta con el flag grace_offline correcto, no hace
+      // falta llamar a renderLicenseBadge() otra vez.
+      bootApp(cached.payload, cached.grace_offline);
       // Heartbeat silencioso en background
       maybeRunHeartbeat(cached);
     } else {
