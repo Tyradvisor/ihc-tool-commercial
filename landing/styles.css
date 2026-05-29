@@ -478,6 +478,18 @@ section { padding: 80px 0; }
 .plan-features li.off { color: #CBD5E1; }
 .plan-cta { width: 100%; }
 
+/* Letra chica de aclaraciones de plan (ej: Enterprise, condiciones de presencialidad).
+   Se ubica entre la lista de features y el CTA. */
+.plan-fineprint {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 0 0 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--border);
+}
+.plan-fineprint strong { color: var(--text); }
+
 /* ════════════════════════════════════════════════════════════
    SERVICIOS (add-on de toma de inventario en terreno)
    ──────────────────────────────────────────────────────────── */
