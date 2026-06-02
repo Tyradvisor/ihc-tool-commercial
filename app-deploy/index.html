@@ -30,12 +30,12 @@
     .tb-badge { font-size: 9px; background: var(--accent); color: var(--primary);
       padding: 2px 6px; border-radius: 4px; font-weight: 800; margin-left: 4px; }
     .tb-right { display: flex; align-items: center; gap: 10px; }
-    #clientNameInput {
+    #clientNameInput, #emisorInput {
       background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
       color: #fff; padding: 5px 10px; border-radius: 6px; font-size: 13px;
-      font-family: inherit; min-width: 220px; outline: none;
+      font-family: inherit; min-width: 150px; outline: none;
     }
-    #clientNameInput::placeholder { color: rgba(255,255,255,0.35); }
+    #clientNameInput::placeholder, #emisorInput::placeholder { color: rgba(255,255,255,0.35); }
     .tb-btn {
       background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
       color: rgba(255,255,255,0.8); padding: 5px 12px; border-radius: 6px;
@@ -330,7 +330,9 @@
     <div class="tb-prod">Inventory Health Check<span class="tb-badge">™</span></div>
   </div>
   <div class="tb-right" id="topbarRight" style="display:none">
-    <input id="clientNameInput" type="text" placeholder="Nombre del cliente..." maxlength="60">
+    <input id="clientNameInput" type="text" placeholder="Preparado para..." title="Nombre del receptor del informe (cliente/empresa)" maxlength="60">
+    <input id="emisorInput" type="text" placeholder="Preparado por..." title="Nombre de quien genera el informe" maxlength="60">
+    <button class="tb-btn" id="btnResumenEjec" onclick="openResumenEjecutivo()" style="display:none">📄 Resumen Ejecutivo</button>
     <button class="tb-btn" onclick="window.print()">🖨 Imprimir PDF</button>
     <button class="tb-btn" onclick="resetApp()">↩ Nuevo análisis</button>
   </div>
@@ -1329,6 +1331,253 @@ function showScreen(name) {
   const isDash = name==='dash';
   document.getElementById('topbarRight').style.display = isDash?'flex':'none';
   document.getElementById('subnav').style.display = isDash?'flex':'none';
+  // Resumen Ejecutivo: solo planes Pro y Enterprise
+  if (isDash) {
+    let plan = 'starter';
+    try { plan = (window.ihcLicense && window.ihcLicense.getPlan && window.ihcLicense.getPlan()) || 'starter'; } catch(e){}
+    plan = String(plan).toLowerCase();
+    const btnRE = document.getElementById('btnResumenEjec');
+    if (btnRE) btnRE.style.display = (plan === 'pro' || plan === 'enterprise') ? 'inline-block' : 'none';
+  }
+}
+
+// ─── RESUMEN EJECUTIVO (Pro / Enterprise) ──────────────────────────────────
+function openResumenEjecutivo() {
+  const d = S.data;
+  if (!d || !d.totalSKUs) { alert('Primero genera un análisis cargando el inventario.'); return; }
+  // Receptor (preparado para) y emisor (preparado por) — desde los campos de la topbar
+  const cliente = (document.getElementById('clientNameInput').value || '').trim() || '—';
+  const emisor  = (document.getElementById('emisorInput')?.value || '').trim();
+  const hoy = new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' });
+  const LOGO = 'https://tyradvisor.com/wp-content/uploads/2026/04/Logo-sin-f-1.png';
+
+  // ── Estado y helpers ──
+  const estado = d.score < 50 ? 'Crítico' : d.score < 65 ? 'Atención Requerida' : d.score < 80 ? 'Controlable' : 'Saludable';
+  const estadoColor = d.score < 50 ? '#EF4444' : d.score < 65 ? '#F59E0B' : d.score < 80 ? '#F59E0B' : '#10B981';
+  const iraTxt  = d.ira  !== null ? d.ira.toFixed(1)+'%'  : 'N/D';
+  const iraATxt = d.iraA !== null ? d.iraA.toFixed(1)+'%' : 'N/D';
+  const total = d.abcAval + d.abcBval + d.abcCval;
+  const pctValA = total>0 ? (d.abcAval/total*100).toFixed(0) : '0';
+  const pctSkuA = d.totalSKUs>0 ? (d.abcA.length/d.totalSKUs*100).toFixed(0) : '0';
+  const matNames = ['','Inicial','Básico','Estandarizado','Gestionado','Optimizado'];
+
+  // ── NARRATIVA EJECUTIVA POR DIMENSIONES (nivel consultoría) ──
+  const parrafos = [];
+
+  // P1 — Situación general
+  let p1 = `El presente informe resume el diagnóstico de salud del inventario de <strong>${cliente}</strong>, sobre una base de <strong>${d.totalSKUs.toLocaleString('es-CL')} SKUs</strong> que representan un valor total de <strong>${M(d.totalValue)}</strong>. `;
+  p1 += `El <strong>Health Score global es de ${d.score}/100</strong>, lo que sitúa la operación en un estado <strong style="color:${estadoColor}">${estado}</strong> y en un nivel de madurez <strong>${matNames[d.matLevel]||('Nivel '+d.matLevel)}</strong> (${d.matLevel} de 5). `;
+  p1 += d.score < 65
+    ? `Este resultado indica que el inventario aún no constituye una base confiable para la toma de decisiones y requiere intervención estructurada en el corto plazo.`
+    : d.score < 80
+      ? `La operación tiene fundamentos correctos, pero persisten brechas que limitan su confiabilidad y eficiencia.`
+      : `La operación presenta una gestión sólida; el foco debe estar en sostener y optimizar los indicadores ya alcanzados.`;
+  parrafos.push(p1);
+
+  // P2 — Exactitud (confiabilidad del dato)
+  let p2 = '';
+  if (d.ira !== null) {
+    const unfiable = (100 - d.ira);
+    p2 += `<strong>Confiabilidad del inventario.</strong> La exactitud de registro (IRA) alcanza <strong>${iraTxt}</strong>${d.ira<95?`, bajo el estándar de industria de 95%`:`, en línea con las mejores prácticas`}. `;
+    if (d.ira < 95) {
+      p2 += `En términos prácticos, cerca de <strong>${unfiable.toFixed(0)} de cada 100 registros</strong> no coinciden con la existencia física, lo que obliga a verificaciones de emergencia, erosiona la confianza en el sistema y expone a decisiones de compra y despacho basadas en datos incorrectos. `;
+    }
+    if (d.iraA !== null) {
+      p2 += `Críticamente, la exactitud de la <strong>clase A es de ${iraATxt}</strong>${d.iraA<99?`, muy por debajo del 99% exigible a los ítems de mayor valor`:`, dentro del objetivo`}, ` ;
+      p2 += d.iraA<99 ? `lo que significa que el segmento que concentra el grueso del capital es justamente el menos confiable.` : `asegurando control sobre el capital más relevante.`;
+    }
+  } else {
+    p2 += `<strong>Confiabilidad del inventario.</strong> El archivo analizado no incluyó conteo físico, por lo que no fue posible calcular la exactitud de registro (IRA). Se recomienda incorporar un conteo —al menos de la clase A— para habilitar este diagnóstico, que es la base de cualquier mejora de inventario.`;
+  }
+  if (p2) parrafos.push(p2);
+
+  // P3 — Concentración de valor (ABC)
+  let p3 = `<strong>Concentración del valor.</strong> El análisis ABC confirma el patrón de Pareto: la <strong>clase A concentra el ${pctValA}% del valor</strong> en apenas el ${pctSkuA}% de los SKUs (${d.abcA.length} ítems, ${M(d.abcAval)}). `;
+  p3 += `Esto define con claridad dónde debe enfocarse el control: un esfuerzo acotado sobre estos ${d.abcA.length} ítems protege la mayor parte del capital invertido en inventario.`;
+  parrafos.push(p3);
+
+  // P4 — Costo oculto (capital + obsolescencia + diferencias)
+  let p4 = '', costos = [];
+  if (d.hasSales && d.ovTotal > 0) costos.push(`<strong>${M(d.ovTotal)}</strong> en sobrestock (capital inmovilizado que no rota)`);
+  if (d.agingRisk > 0) costos.push(`<strong>${M(d.agingRisk)}</strong> (${d.agingRiskPct.toFixed(1)}% del stock) con más de 180 días sin movimiento, en riesgo de obsolescencia y candidato a provisión contable`);
+  if (d.faltVal > 0) costos.push(`<strong>${M(d.faltVal)}</strong> en diferencias de inventario no regularizadas`);
+  if (costos.length) {
+    p4 = `<strong>Costo oculto.</strong> Más allá de la exactitud, el diagnóstico identifica capital atrapado y riesgos cuantificables: ` + costos.join('; ') + `. ` ;
+    p4 += `Estos montos representan oportunidades concretas de liberación de caja y reducción de pérdidas si se gestionan con un plan estructurado.`;
+    parrafos.push(p4);
+  }
+
+  // P5 — Implicancia / cierre
+  let p5 = `<strong>Implicancia.</strong> `;
+  p5 += d.score < 65
+    ? `De no mediar acción, estos factores seguirán generando sobrecostos operativos, decisiones erradas y deterioro de capital. La buena noticia es que el ${pctValA}% del valor se concentra en pocos ítems, por lo que un plan focalizado puede generar mejoras visibles en un horizonte de 30 a 90 días.`
+    : `El plan de acción propuesto a continuación prioriza las intervenciones de mayor impacto y menor esfuerzo para consolidar la gestión y capturar las oportunidades identificadas.`;
+  parrafos.push(p5);
+
+  // ── HALLAZGOS CLAVE ──
+  const hallazgos = [];
+  if (d.ira !== null && d.ira < 95) hallazgos.push(`Exactitud de inventario de <strong>${iraTxt}</strong>, bajo el benchmark de 95%.`);
+  if (d.iraA !== null && d.iraA < 99) hallazgos.push(`Exactitud de clase A en <strong>${iraATxt}</strong> (objetivo: ≥99%), el segmento de mayor valor.`);
+  if (d.faltVal > 0) hallazgos.push(`Diferencias no regularizadas por <strong>${M(d.faltVal)}</strong>.`);
+  if (d.agingRisk > 0) hallazgos.push(`<strong>${M(d.agingRisk)}</strong> en stock sobre 180 días (riesgo de obsolescencia).`);
+  if (d.hasSales && d.ovTotal > 0) hallazgos.push(`Sobrestock de <strong>${M(d.ovTotal)}</strong> en capital inmovilizado.`);
+  if (d.quiebres > 0) hallazgos.push(`<strong>${d.quiebres} SKUs en quiebre</strong> de stock (${d.qA} de clase A — venta perdida directa).`);
+  if (d.benchScore < 80) hallazgos.push(`Adherencia a procesos de <strong>${d.benchScore}%</strong>: brechas en controles clave.`);
+  if (hallazgos.length === 0) hallazgos.push('Indicadores dentro de rangos saludables; foco en sostener y optimizar.');
+
+  // ── KPIs ──
+  const kpis = [
+    ['Health Score', d.score+'/100'],
+    ['Exactitud (IRA)', iraTxt],
+    ['Madurez', d.matLevel+'/5'],
+    ['Valor inventario', M(d.totalValue)],
+    ['Stock >180 días', d.agingRisk>0?M(d.agingRisk):'—'],
+    ['Sobrestock', (d.hasSales&&d.ovTotal>0)?M(d.ovTotal):'—'],
+  ];
+
+  // ── PLAN DE ACCIÓN DESARROLLADO (fichas de consultoría) ──
+  // Cada acción: qué, por qué, cómo, impacto esperado, plazo, responsable.
+  const acciones = [];
+  acciones.push({
+    n:1, prio:'Alta', t:'Conteo físico y saneamiento de clase A',
+    why:`${d.abcA.length} SKUs concentran el ${pctValA}% del valor (${M(d.abcAval)})${d.iraA!==null&&d.iraA<99?` con exactitud de solo ${iraATxt}`:''}. Es el capital más relevante y, hoy, el menos confiable.`,
+    how:'Conteo cíclico del 100% de la clase A, ajuste de cada diferencia y registro de su causa raíz. Validación cruzada sistema vs. físico.',
+    impact:`Recuperar control sobre ${M(d.abcAval)}; elevar IRA de clase A hacia ≥95%.`,
+    plazo:'30 días', resp:'Jefe de Bodega + Control de Gestión'
+  });
+  if (d.agingRisk > 0) acciones.push({
+    n:acciones.length+1, prio:'Alta', t:'Plan de obsolescencia y liberación de capital',
+    why:`${M(d.agingRisk)} (${d.agingRiskPct.toFixed(1)}% del stock) supera los 180 días sin movimiento, con riesgo de pérdida total y obligación de provisión contable.`,
+    how:'Clasificar el stock lento, definir destino por SKU (liquidación, retorno a proveedor, promoción o baja contable) y ejecutar con metas mensuales.',
+    impact:`Liberar caja y reducir provisiones; sanear hasta ${M(d.agingRisk)} en activos improductivos.`,
+    plazo:'30–60 días', resp:'Operaciones + Finanzas'
+  });
+  acciones.push({
+    n:acciones.length+1, prio:'Alta', t:'Control de ajustes y proceso de recepción',
+    why:'Las diferencias de inventario suelen originarse en ajustes manuales sin autorización y recepciones sin validación doble.',
+    how:'Activar workflow de aprobación para todo ajuste de stock y exigir verificación contra OC/guía con evidencia digital en cada recepción.',
+    impact:'Atacar la causa raíz de las diferencias; reducción esperada ~60% en descuadres.',
+    plazo:'30 días', resp:'Jefe de Bodega'
+  });
+  acciones.push({
+    n:acciones.length+1, prio:'Media', t:'Conteo cíclico ABC permanente',
+    why:'Un conteo cíclico sostenido evita que la exactitud vuelva a degradarse tras el saneamiento inicial.',
+    how:'Frecuencia diferenciada: clase A mensual, B trimestral, C semestral, con responsable único asignado y calendario formal.',
+    impact:'Sostener la exactitud en el tiempo y anticipar desvíos antes de que escalen.',
+    plazo:'60 días', resp:'Jefe de Bodega'
+  });
+  if (d.hasSales && d.ovTotal > 0) acciones.push({
+    n:acciones.length+1, prio:'Media', t:'Optimización de niveles de stock',
+    why:`Se detecta sobrestock por ${M(d.ovTotal)} en capital inmovilizado, que reduce liquidez y aumenta costos de mantención.`,
+    how:'Revisar puntos de reorden y stock de seguridad por SKU según rotación real; ajustar política de compra para ítems de baja salida.',
+    impact:`Reducción esperada ~25% del sobrestock; mejor uso del capital de trabajo.`,
+    plazo:'60–90 días', resp:'Compras + Planificación'
+  });
+  acciones.push({
+    n:acciones.length+1, prio:'Media', t:'Dashboard de KPIs y gobierno de inventario',
+    why:'Lo que no se mide no se gestiona: sin indicadores visibles, las mejoras no se sostienen.',
+    how:'Implementar tablero mensual con exactitud por clase, aging, cobertura en días y quiebres, con revisión formal en comité de operaciones.',
+    impact:'Visibilidad ejecutiva continua y seguimiento del avance del plan.',
+    plazo:'60 días', resp:'Jefe de Bodega + Gerencia de Operaciones'
+  });
+
+  const prioColor = p => p==='Alta' ? '#EF4444' : p==='Media' ? '#F59E0B' : '#10B981';
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<title>Resumen Ejecutivo — ${cliente}</title>
+<style>
+  @page { margin: 16mm; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{background:#E8ECF1}
+  body{font-family:'Segoe UI',system-ui,Arial,sans-serif;color:#1E293B;line-height:1.6;font-size:12.5px;
+    max-width:820px;margin:0 auto;background:#fff;padding:40px 48px 64px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+  .re-head{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #003366;padding-bottom:16px;margin-bottom:20px}
+  .re-head img{height:46px}
+  .re-head .t{text-align:right}
+  .re-head .t h1{font-size:21px;color:#003366;font-weight:800;letter-spacing:-.3px}
+  .re-head .t .s{font-size:10.5px;color:#64748B;text-transform:uppercase;letter-spacing:1.5px}
+  .re-meta{display:flex;gap:32px;font-size:12px;color:#475569;margin-bottom:22px;background:#F8FAFC;padding:10px 16px;border-radius:8px;border:1px solid #E2E8F0}
+  .re-meta strong{color:#003366}
+  h2{font-size:12.5px;text-transform:uppercase;letter-spacing:1px;color:#CFAE58;margin:24px 0 10px;font-weight:800;border-bottom:1px solid #E2E8F0;padding-bottom:5px}
+  .score-box{display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,#003366,#001F3F);color:#fff;border-radius:12px;padding:18px 24px;margin-bottom:14px}
+  .score-num{font-size:44px;font-weight:800;color:${estadoColor};line-height:1}
+  .score-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.7)}
+  .score-est{font-size:18px;font-weight:700;color:${estadoColor}}
+  .narr p{margin:0 0 11px;text-align:justify}
+  .grid2{display:grid;grid-template-columns:1.35fr 1fr;gap:24px;align-items:start}
+  ul{list-style:none}
+  .hall li{padding:6px 0 6px 18px;position:relative;font-size:12px}
+  .hall li::before{content:"▸";position:absolute;left:0;color:#CFAE58;font-weight:800}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .kpi{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:9px 12px}
+  .kpi .k{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:#64748B}
+  .kpi .v{font-size:16px;font-weight:800;color:#003366}
+  .acc{border:1px solid #E2E8F0;border-radius:10px;padding:14px 16px;margin-bottom:12px;page-break-inside:avoid}
+  .acc-h{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .acc-n{width:26px;height:26px;border-radius:7px;background:#003366;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}
+  .acc-t{font-size:14px;font-weight:700;color:#003366;flex:1}
+  .acc-prio{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:3px 9px;border-radius:999px;color:#fff}
+  .acc-row{display:flex;gap:8px;font-size:11.5px;margin:3px 0;line-height:1.5}
+  .acc-row .lbl{font-weight:700;color:#475569;min-width:78px;flex-shrink:0}
+  .acc-meta{display:flex;gap:18px;margin-top:8px;padding-top:8px;border-top:1px dashed #E2E8F0;font-size:11px}
+  .acc-meta span{color:#64748B}.acc-meta strong{color:#003366}
+  .re-foot{margin-top:30px;padding-top:14px;border-top:2px solid #003366;font-size:10px;color:#94A3B8;display:flex;justify-content:space-between}
+  .disc{font-size:9.5px;color:#94A3B8;font-style:italic;margin-top:8px;line-height:1.5}
+  .noprint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#003366;color:#fff;border:none;padding:13px 26px;border-radius:999px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(0,31,63,.3);z-index:99;transition:transform .15s,background .2s}
+  .noprint:hover{background:#001F3F;transform:translateX(-50%) translateY(-2px)}
+  @media print{.noprint{display:none}@page{margin:16mm}body{box-shadow:none;max-width:none;padding:0;margin:0}html{background:#fff}}
+</style></head><body>
+  <button class="noprint" onclick="window.print()">🖨 Descargar / Imprimir PDF</button>
+  <div class="re-head">
+    <img src="${LOGO}" alt="TyrAdvisor" onerror="this.style.display='none'">
+    <div class="t"><h1>Resumen Ejecutivo</h1><div class="s">Inventory Health Check · IHC Tool™</div></div>
+  </div>
+  <div class="re-meta">
+    <div><strong>Preparado para:</strong> ${cliente}</div>
+    ${emisor ? `<div><strong>Preparado por:</strong> ${emisor}</div>` : ''}
+    <div><strong>Fecha:</strong> ${hoy}</div>
+    <div><strong>SKUs:</strong> ${d.totalSKUs.toLocaleString('es-CL')}</div>
+  </div>
+
+  <h2>Diagnóstico general</h2>
+  <div class="score-box">
+    <div><div class="score-num">${d.score}</div><div class="score-lbl">Health Score / 100</div></div>
+    <div><div class="score-est">${estado}</div><div class="score-lbl">Madurez nivel ${d.matLevel}/5 · ${matNames[d.matLevel]||''}</div></div>
+  </div>
+  <div class="narr">${parrafos.map(p=>`<p>${p}</p>`).join('')}</div>
+
+  <div class="grid2">
+    <div>
+      <h2>Hallazgos clave</h2>
+      <ul class="hall">${hallazgos.map(h=>`<li>${h}</li>`).join('')}</ul>
+    </div>
+    <div>
+      <h2>Cifras críticas</h2>
+      <div class="kpis">${kpis.map(k=>`<div class="kpi"><div class="k">${k[0]}</div><div class="v">${k[1]}</div></div>`).join('')}</div>
+    </div>
+  </div>
+
+  <h2>Plan de acción priorizado</h2>
+  ${acciones.map(a=>`<div class="acc">
+    <div class="acc-h">
+      <div class="acc-n">${a.n}</div>
+      <div class="acc-t">${a.t}</div>
+      <span class="acc-prio" style="background:${prioColor(a.prio)}">Prioridad ${a.prio}</span>
+    </div>
+    <div class="acc-row"><span class="lbl">Por qué:</span><span>${a.why}</span></div>
+    <div class="acc-row"><span class="lbl">Qué hacer:</span><span>${a.how}</span></div>
+    <div class="acc-row"><span class="lbl">Impacto:</span><span>${a.impact}</span></div>
+    <div class="acc-meta"><span>⏱ Plazo: <strong>${a.plazo}</strong></span><span>👤 Responsable: <strong>${a.resp}</strong></span></div>
+  </div>`).join('')}
+
+  <div class="re-foot">
+    <span><strong>TyrAdvisor SpA</strong> · contacto@tyradvisor.com · tyradvisor.com</span>
+    <span>Generado por IHC Tool™ · ${hoy}</span>
+  </div>
+  <p class="disc">Este informe se genera automáticamente a partir de los datos cargados por el cliente y tiene carácter de apoyo a la gestión. No constituye asesoría contable, tributaria, financiera ni legal. Las cifras dependen de la calidad de los datos de entrada.</p>
+</body></html>`);
+  win.document.close();
 }
 
 function showError(msg) {
