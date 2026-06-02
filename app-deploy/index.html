@@ -346,9 +346,9 @@
   <a href="#abc">06 · ABC</a>
   <a href="#causas">07 · Causas Raíz</a>
   <a href="#benchmark">08 · Benchmark</a>
-  <a href="#madurez">09 · Madurez</a>
-  <a href="#plan">10 · Plan de Acción</a>
-  <a href="#obsolescencia">11 · Obsolescencia</a>
+  <a href="#obsolescencia">09 · Obsolescencia</a>
+  <a href="#madurez">10 · Madurez</a>
+  <a href="#plan">11 · Plan de Acción</a>
 </div>
 
 <!-- ══ SCREEN 1: UPLOAD ══════════════════════════════════════════════════ -->
@@ -676,11 +676,19 @@ function calcAll() {
   const catLabels  = Object.keys(cats).slice(0,6);
   const catExact   = catLabels.map(c => +(cats[c].exact/cats[c].total*100).toFixed(1));
 
-  // ── ABC EXACTITUD ──
-  const abcAexact = withFis.filter(r=>r.abc==='A');
-  let aEx=0;
-  abcAexact.forEach(r => { const d=Math.abs(r.sys-r.fis); if(r.sys>0?d/r.sys:1 <= 0.01) aEx++; });
-  const iraA = abcAexact.length > 0 ? +(aEx/abcAexact.length*100).toFixed(1) : null;
+  // ── ABC EXACTITUD (por clase) ──
+  // Calcula la exactitud (IRA) de cada clase ABC: % de SKUs con diferencia <=1%
+  // entre sistema y conteo físico, considerando solo los SKUs que tienen conteo físico.
+  const iraForClass = cls => {
+    const set = withFis.filter(r => r.abc === cls);
+    if (set.length === 0) return null;
+    let ok = 0;
+    set.forEach(r => { const diff = Math.abs(r.sys - r.fis); if ((r.sys > 0 ? diff / r.sys : 1) <= 0.01) ok++; });
+    return +(ok / set.length * 100).toFixed(1);
+  };
+  const iraA = iraForClass('A');
+  const iraB = iraForClass('B');
+  const iraC = iraForClass('C');
 
   // ── BENCHMARK (from questionnaire) ──
   const yesCount = S.answers.filter(a=>a===true).length;
@@ -721,7 +729,7 @@ function calcAll() {
     agingVal, agingCnt, agingRisk, agingRiskPct,
     quiebres, qA, qB, qC,
     ovMod, ovCrit, ovTotal, hasSales,
-    abcA, abcB, abcC, abcAval, abcBval, abcCval, iraA,
+    abcA, abcB, abcC, abcAval, abcBval, abcCval, iraA, iraB, iraC,
     catLabels, catExact,
     causes,
     benchScore, benchVals, benchBP, benchLabels, yesCount,
@@ -826,9 +834,9 @@ function renderDashboard() {
   w.appendChild(secABC(d));
   w.appendChild(secCausas(d));
   w.appendChild(secBenchmark(d));
+  w.appendChild(secObsolescencia(d));
   w.appendChild(secMadurez(d));
   w.appendChild(secPlan(d));
-  w.appendChild(secObsolescencia(d));
 
   // Charts (deferred to allow DOM to settle)
   requestAnimationFrame(() => { renderCharts(d); renderObsSkuTable(0); });
@@ -971,7 +979,8 @@ function secRiesgos(d) {
 
 function secABC(d) {
   const av = d.abcAval, bv = d.abcBval, cv = d.abcCval, total = av+bv+cv;
-  const iraA = d.iraA !== null ? `<span class="badge ${gc(d.iraA)}">${pct(d.iraA)}</span>` : '<span class="badge gray">N/D</span>';
+  const iraBadge = v => v !== null ? `<span class="badge ${gc(v)}">${pct(v)}</span>` : '<span class="badge gray">N/D</span>';
+  const iraA = iraBadge(d.iraA), iraBb = iraBadge(d.iraB), iraCc = iraBadge(d.iraC);
   return section('abc','📈','06','Criticidad ABC','Concentración de valor y nivel de control requerido',`Clase A: ${(av/total*100).toFixed(0)}% del valor`,'yellow',`
     <div class="row c3">
       ${card('Distribución por Valor','<div class="chart-wrap" style="height:200px"><canvas id="c-abc"></canvas></div>')}
@@ -981,8 +990,8 @@ function secABC(d) {
           <thead><tr><th>Clase</th><th>SKUs</th><th>% SKUs</th><th>Valor Stock</th><th>% Valor</th><th>Exactitud</th><th>Meta</th></tr></thead>
           <tbody>
             <tr><td><strong style="color:var(--red)">A — Crítico</strong></td><td>${d.abcA.length}</td><td>${(d.abcA.length/d.totalSKUs*100).toFixed(0)}%</td><td>${M(av)}</td><td>${(av/total*100).toFixed(0)}%</td><td>${iraA}</td><td>≥ 99%</td></tr>
-            <tr><td><strong style="color:var(--yellow)">B — Relevante</strong></td><td>${d.abcB.length}</td><td>${(d.abcB.length/d.totalSKUs*100).toFixed(0)}%</td><td>${M(bv)}</td><td>${(bv/total*100).toFixed(0)}%</td><td><span class="badge gray">N/D</span></td><td>≥ 95%</td></tr>
-            <tr><td><strong style="color:var(--green)">C — Rutinario</strong></td><td>${d.abcC.length}</td><td>${(d.abcC.length/d.totalSKUs*100).toFixed(0)}%</td><td>${M(cv)}</td><td>${(cv/total*100).toFixed(0)}%</td><td><span class="badge gray">N/D</span></td><td>≥ 85%</td></tr>
+            <tr><td><strong style="color:var(--yellow)">B — Relevante</strong></td><td>${d.abcB.length}</td><td>${(d.abcB.length/d.totalSKUs*100).toFixed(0)}%</td><td>${M(bv)}</td><td>${(bv/total*100).toFixed(0)}%</td><td>${iraBb}</td><td>≥ 95%</td></tr>
+            <tr><td><strong style="color:var(--green)">C — Rutinario</strong></td><td>${d.abcC.length}</td><td>${(d.abcC.length/d.totalSKUs*100).toFixed(0)}%</td><td>${M(cv)}</td><td>${(cv/total*100).toFixed(0)}%</td><td>${iraCc}</td><td>≥ 85%</td></tr>
           </tbody>
         </table>
         <div class="hl">Los SKUs clase A (${(d.abcA.length/d.totalSKUs*100).toFixed(0)}% del catálogo) concentran el <strong>${(av/total*100).toFixed(0)}% del valor total</strong> (${M(av)}). Son los que requieren el más alto nivel de control y exactitud.</div>
@@ -1019,7 +1028,7 @@ function secMadurez(d) {
   const lvls = ['Caótico','Reactivo','Definido','Medido','Optimizado'];
   const descs = ['Sin procesos formales','Básicos sin control','Estandarizados','KPIs y mejora continua','Automatización predictiva'];
   const lvlHtml = lvls.map((n,i)=>`<div class="mat-lv ${i+1===d.matLevel?'active':''}"><div class="mat-num">${i+1}</div><div class="mat-name">${n}</div><div class="mat-desc">${descs[i]}</div></div>`).join('');
-  return section('madurez','🎓','09','Madurez de Gestión de Inventario','Nivel actual y brecha hacia la excelencia operacional',`Nivel ${d.matLevel} / 5`,'yellow',`
+  return section('madurez','🎓','10','Madurez de Gestión de Inventario','Nivel actual y brecha hacia la excelencia operacional',`Nivel ${d.matLevel} / 5`,'yellow',`
     <div class="card">
       <div class="card-title">Modelo de Madurez — Posición Actual</div>
       <div class="mat-levels">${lvlHtml}</div>
@@ -1065,7 +1074,7 @@ function secPlan(d) {
     <div style="font-size:11px;color:var(--muted)">${acts[i].desc}</div>
     <div style="margin-top:5px;display:flex;gap:5px">${acts[i].tags}</div></div></div>`;
   const potRecov = Math.round((d.faltVal + d.agingVal[4]*0.5 + d.ovCrit*0.3) / 1e6);
-  return section('plan','🚀','10','Plan de Acción Prioritario','Recomendaciones ordenadas por impacto y urgencia','Quick wins + estructurales','blue',`
+  return section('plan','🚀','11','Plan de Acción Prioritario','Recomendaciones ordenadas por impacto y urgencia','Quick wins + estructurales','blue',`
     <div class="row c2">
       ${card('⚡ Acciones Inmediatas — 0 a 30 días','<div style="padding-top:4px">'+ [0,1,2].map(actHtml).join('') +'</div>')}
       ${card('🏗 Acciones Estructurales — 30 a 90 días','<div style="padding-top:4px">'+ [3,4,5].map(actHtml).join('') +'</div>')}
@@ -1082,7 +1091,7 @@ function secPlan(d) {
 
 function secObsolescencia(d) {
   if (!d.hasExpDates) {
-    return section('obsolescencia','⏰','11','Obsolescencia &amp; Vencimientos',
+    return section('obsolescencia','⏰','09','Obsolescencia &amp; Vencimientos',
       'Alertas de SKUs próximos a vencer','Sin columna de vencimiento','gray',
       `<div class="nd-box">⚠ No se encontró la columna <strong>Fecha_Vencimiento</strong>. Agrégala al Excel para activar las alertas de vencimiento por período personalizable.</div>`);
   }
@@ -1115,7 +1124,7 @@ function secObsolescencia(d) {
   const badgeLbl = criticalCount > 0 ? `⚠ ${criticalCount} críticos` : totalExp > 0 ? `${totalExp} registros` : 'Sin alertas';
   const badgeCls = criticalCount > 0 ? 'red' : totalExp > 0 ? 'yellow' : 'green';
 
-  return section('obsolescencia','⏰','11','Obsolescencia &amp; Vencimientos',
+  return section('obsolescencia','⏰','09','Obsolescencia &amp; Vencimientos',
     'Alertas de SKUs próximos a vencer — período customizable', badgeLbl, badgeCls, `
     ${expiredHtml}
     <div class="row c4" style="margin-bottom:16px">${summaryCards}</div>
