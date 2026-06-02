@@ -371,10 +371,15 @@ def login_page():
                     return
                 try:
                     with st.spinner("Verificando credenciales..."):
-                        sb = get_supabase()
-                        auth = sb.auth.sign_in_with_password({"email": email, "password": password})
+                        # IMPORTANTE: usar un cliente DESECHABLE solo para el login.
+                        # No usar get_supabase() (cacheado, service_role): sign_in_with_password
+                        # le adoptaría el JWT del usuario (rol authenticated) y RLS bloquearía
+                        # las escrituras administrativas (eventos_licencia, etc.).
+                        sb_login = create_client(SUPABASE_URL, ANON_KEY)
+                        auth = sb_login.auth.sign_in_with_password({"email": email, "password": password})
                         user_id = auth.user.id
-                        # Verificar rol admin (columna real en BD: "rol")
+                        # Verificar rol admin con el cliente service_role limpio (columna real: "rol")
+                        sb = get_supabase()
                         role = sb.table("user_roles").select("rol").eq("user_id", user_id).single().execute()
                         if role.data and role.data.get("rol") == "admin":
                             st.session_state["authenticated"] = True
