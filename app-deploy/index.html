@@ -300,6 +300,22 @@
       .impact-grid { grid-template-columns: 1fr 1fr; }
       .period-tabs { flex-direction: column; }
     }
+    /* ─── RESPONSIVE TOPBAR (tablet / móvil) ──────────────── */
+    @media (max-width: 1024px) {
+      .topbar { height: auto; flex-wrap: wrap; padding: 8px 16px; row-gap: 8px; }
+      .tb-right { flex-wrap: wrap; width: 100%; justify-content: flex-end; gap: 8px; }
+      #clientNameInput, #emisorInput { min-width: 0; flex: 1 1 150px; }
+      .subnav { padding: 0 16px; }
+      .container { padding: 20px 16px 48px; }
+      .upload-wrap { min-height: auto; }
+    }
+    @media (max-width: 560px) {
+      .tb-brand { width: 100%; }
+      .tb-right { justify-content: flex-start; }
+      .tb-btn { flex: 1 1 calc(50% - 4px); min-width: 0; text-align: center; }
+      #clientNameInput, #emisorInput { flex: 1 1 100%; }
+    }
+
     @media print { .topbar, .subnav { position: relative; } }
 
     /* ─── TYC CHECKBOX ─────────────────────────────────────────────────────── */
