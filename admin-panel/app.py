@@ -35,8 +35,10 @@ st.set_page_config(
 )
 
 # ── CSS PROFESIONAL ───────────────────────────────────────────
+# Cache buster: fuerza recarga del CSS
 st.markdown("""
 <style>
+  /* v2.1 - Tema profesional claro */
   * { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
 
   body, .main {
