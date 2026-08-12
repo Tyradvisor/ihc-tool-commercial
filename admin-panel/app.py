@@ -872,14 +872,27 @@ def seccion_licencias():
             col1, col2 = st.columns(2)
             with col1:
                 cliente_sel = st.selectbox("Cliente *", list(cliente_map.keys()))
-                plan = st.selectbox("Plan *", ["starter","pro","enterprise"],
-                                   format_func=lambda x: {"starter":"Starter — $960.000/año",
+                plan = st.selectbox("Plan *", ["piloto","starter","pro","enterprise"],
+                                   format_func=lambda x: {"piloto":"🆕 Piloto — 3 meses GRATIS (sin costo)",
+                                                           "starter":"Starter — $960.000/año",
                                                            "pro":"Pro — $2.500.000/año",
                                                            "enterprise":"Enterprise — desde $4.800.000/año"}[x])
-                duracion = st.selectbox("Duración", [12, 24, 36],
-                                       format_func=lambda x: f"{x} meses")
+
+                # Si es piloto, duración fija a 3 meses
+                if plan == "piloto":
+                    duracion = 3
+                    st.info("📌 Licencia Piloto: 3 meses automáticamente, sin costo")
+                else:
+                    duracion = st.selectbox("Duración", [12, 24, 36],
+                                           format_func=lambda x: f"{x} meses")
             with col2:
-                precio_pagado = st.number_input("Precio pagado (CLP)", min_value=0, step=10000)
+                # Si es piloto, precio automático 0
+                if plan == "piloto":
+                    precio_pagado = 0
+                    st.info("💰 Precio: $0 (sin costo para piloto)")
+                else:
+                    precio_pagado = st.number_input("Precio pagado (CLP)", min_value=0, step=10000)
+
                 factura = st.text_input("N° Factura", placeholder="F-2026-0001")
                 password_temp = st.text_input("Contraseña temporal",
                                              value=gen_password(),
