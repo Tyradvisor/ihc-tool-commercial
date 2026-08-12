@@ -29,7 +29,7 @@ ANON_KEY = _get_secret("SUPABASE_ANON_KEY")
 
 st.set_page_config(
     page_title="IHC Tool™ Admin",
-    page_icon="🔑",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -37,20 +37,20 @@ st.set_page_config(
 # ── CSS PROFESIONAL ───────────────────────────────────────────
 st.markdown("""
 <style>
-  * { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  * { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
 
-  .main {
-    background: linear-gradient(135deg, #0F1419 0%, #1A2332 100%);
-    color: #E2E8F0;
+  body, .main {
+    background: #F8FAFC;
+    color: #1E293B;
   }
 
   /* ── LOGIN ── */
   .login-container {
-    background: rgba(255, 255, 255, 0.95);
+    background: white;
     border-radius: 16px;
     padding: 48px 40px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(0, 180, 216, 0.1);
+    box-shadow: 0 10px 30px rgba(15, 107, 156, 0.15);
+    border: 1px solid #E2E8F0;
   }
 
   .login-header {
@@ -59,9 +59,9 @@ st.markdown("""
   }
 
   .login-title {
-    font-size: 32px;
+    font-size: 36px;
     font-weight: 900;
-    color: #0A1628;
+    color: #0F6B9C;
     margin: 0;
     letter-spacing: -0.5px;
   }
@@ -69,190 +69,193 @@ st.markdown("""
   .login-subtitle {
     font-size: 13px;
     color: #64748B;
-    margin-top: 6px;
+    margin-top: 8px;
     letter-spacing: 0.5px;
     text-transform: uppercase;
+    font-weight: 500;
   }
 
   /* ── TOPBAR ── */
   .topbar {
-    background: linear-gradient(90deg, #0A1628 0%, #0D1F2D 100%);
+    background: white;
     padding: 16px 24px;
-    border-bottom: 1px solid #00B4D8;
+    border-bottom: 2px solid #0F6B9C;
     margin-bottom: 24px;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 180, 216, 0.1);
+    box-shadow: 0 2px 8px rgba(15, 107, 156, 0.08);
   }
 
   /* ── METRIC CARDS ── */
   .metric-card {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+    background: white;
     border-radius: 12px;
-    padding: 20px 24px;
-    border: 1px solid rgba(0, 180, 216, 0.2);
+    padding: 24px;
+    border: 1px solid #E2E8F0;
     transition: all 0.3s ease;
     margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   }
 
   .metric-card:hover {
-    background: linear-gradient(135deg, rgba(0, 180, 216, 0.15) 0%, rgba(0, 180, 216, 0.05) 100%);
-    border-color: rgba(0, 180, 216, 0.4);
+    border-color: #0F6B9C;
+    box-shadow: 0 8px 20px rgba(15, 107, 156, 0.12);
     transform: translateY(-2px);
   }
 
   .metric-label {
     font-size: 12px;
-    color: #94A3B8;
+    color: #64748B;
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     font-weight: 600;
   }
 
   .metric-value {
-    font-size: 28px;
-    color: #00B4D8;
+    font-size: 32px;
+    color: #0F6B9C;
     font-weight: 700;
   }
 
   /* ── BADGES ── */
   .badge-activa {
-    background: rgba(16, 185, 129, 0.2);
+    background: #ECFDF5;
     color: #10B981;
-    padding: 4px 10px;
-    border-radius: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    border: 1px solid #BBEAD7;
     display: inline-block;
   }
 
   .badge-expirada {
-    background: rgba(239, 68, 68, 0.2);
-    color: #EF4444;
-    padding: 4px 10px;
-    border-radius: 6px;
+    background: #FEF2F2;
+    color: #DC2626;
+    padding: 6px 12px;
+    border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    border: 1px solid #FECACA;
     display: inline-block;
   }
 
   .badge-suspendida {
-    background: rgba(245, 158, 11, 0.2);
-    color: #F59E0B;
-    padding: 4px 10px;
-    border-radius: 6px;
+    background: #FEF3C7;
+    color: #D97706;
+    padding: 6px 12px;
+    border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    border: 1px solid #FCD34D;
+    display: inline-block;
+  }
+
+  .badge-piloto {
+    background: #E0F2FE;
+    color: #0F6B9C;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #BAE6FD;
     display: inline-block;
   }
 
   .badge-revocada {
-    background: rgba(107, 114, 128, 0.2);
-    color: #9CA3AF;
-    padding: 4px 10px;
-    border-radius: 6px;
+    background: #F3F4F6;
+    color: #6B7280;
+    padding: 6px 12px;
+    border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
-    border: 1px solid rgba(107, 114, 128, 0.3);
+    border: 1px solid #D1D5DB;
     display: inline-block;
   }
 
   /* ── HEADERS ── */
-  .stMarkdown h1 { color: #00B4D8 !important; font-weight: 800 !important; }
-  .stMarkdown h2 { color: #E2E8F0 !important; font-weight: 700 !important; }
-  .stMarkdown h3 { color: #CBD5E1 !important; font-weight: 700 !important; }
+  .stMarkdown h1 { color: #0F6B9C !important; font-weight: 900 !important; margin-bottom: 16px !important; }
+  .stMarkdown h2 { color: #1E293B !important; font-weight: 700 !important; }
+  .stMarkdown h3 { color: #334155 !important; font-weight: 600 !important; }
 
   /* ── DATAFRAME ── */
-  .stDataFrame { background: rgba(255, 255, 255, 0.05) !important; border-radius: 8px !important; }
+  .stDataFrame { background: white !important; border-radius: 8px !important; }
 
   /* ── BUTTONS ── */
   .stButton > button {
-    background: linear-gradient(135deg, #00B4D8 0%, #0090B8 100%);
+    background: linear-gradient(135deg, #0F6B9C 0%, #0A4F7A 100%);
     color: white;
     border: none;
     border-radius: 8px;
     font-weight: 600;
     transition: all 0.3s ease;
+    padding: 10px 24px !important;
   }
 
   .stButton > button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 180, 216, 0.4);
+    box-shadow: 0 8px 24px rgba(15, 107, 156, 0.3);
   }
 
   /* ── INPUTS ── */
   .stTextInput > div > div > input,
   .stTextArea > div > div > textarea,
   .stSelectbox > div > div > select {
-    background: rgba(255, 255, 255, 0.08) !important;
-    border: 1px solid rgba(0, 180, 216, 0.2) !important;
-    color: #E2E8F0 !important;
+    background: white !important;
+    border: 1px solid #E2E8F0 !important;
+    color: #1E293B !important;
     border-radius: 8px !important;
+    padding: 10px 12px !important;
+  }
+
+  .stTextInput > div > div > input:focus,
+  .stTextArea > div > div > textarea:focus,
+  .stSelectbox > div > div > select:focus {
+    border-color: #0F6B9C !important;
+    box-shadow: 0 0 0 3px rgba(15, 107, 156, 0.1) !important;
   }
 
   /* ── SIDEBAR ── */
   section[data-testid="stSidebar"],
   .stSidebar {
-    background: rgba(10, 22, 40, 0.95) !important;
-    border-right: 1px solid #00B4D8;
+    background: white !important;
+    border-right: 1px solid #E2E8F0;
   }
 
-  /* NUCLEAR: cualquier texto dentro del sidebar = blanco legible */
-  section[data-testid="stSidebar"] *:not(button):not(svg):not(path),
-  section[data-testid="stSidebar"] p,
-  section[data-testid="stSidebar"] span,
-  section[data-testid="stSidebar"] div,
-  section[data-testid="stSidebar"] label,
-  section[data-testid="stSidebar"] h1,
-  section[data-testid="stSidebar"] h2,
-  section[data-testid="stSidebar"] h3,
-  section[data-testid="stSidebar"] h4,
-  section[data-testid="stSidebar"] h5,
-  section[data-testid="stSidebar"] h6,
-  section[data-testid="stSidebar"] .stMarkdown,
-  section[data-testid="stSidebar"] .stMarkdown *,
-  section[data-testid="stSidebar"] .stRadio *,
-  section[data-testid="stSidebar"] [data-baseweb="radio"] *,
-  section[data-testid="stSidebar"] div[role="radiogroup"] *,
-  section[data-testid="stSidebar"] div[role="radiogroup"] label,
-  section[data-testid="stSidebar"] div[role="radiogroup"] label p,
-  section[data-testid="stSidebar"] div[role="radiogroup"] label span,
-  section[data-testid="stSidebar"] div[role="radiogroup"] label div {
-    color: #F8FAFC !important;
+  section[data-testid="stSidebar"] *:not(button):not(svg):not(path) {
+    color: #1E293B !important;
   }
 
-  /* Items de radio: padding, hover, ítem activo */
   section[data-testid="stSidebar"] div[role="radiogroup"] > label {
-    padding: 8px 10px !important;
+    padding: 10px 12px !important;
     border-radius: 6px !important;
     margin-bottom: 4px !important;
-    transition: background 0.15s ease;
+    transition: all 0.15s ease;
     cursor: pointer;
-  }
-  section[data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
-    background: rgba(0, 180, 216, 0.15) !important;
-  }
-  /* Ítem seleccionado: fondo destacado */
-  section[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked) {
-    background: rgba(0, 180, 216, 0.20) !important;
+    border: 1px solid transparent !important;
   }
 
-  /* Email admin (en card cyan) mantiene color marca — más específico que regla NUCLEAR */
-  section[data-testid="stSidebar"] p[style*="#00B4D8"] {
-    color: #00B4D8 !important;
+  section[data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
+    background: #F0F9FF !important;
+    border-color: #E0F2FE !important;
+  }
+
+  section[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked) {
+    background: #E0F2FE !important;
+    border-color: #0F6B9C !important;
   }
 
   /* ── DIVIDER ── */
-  hr { border-color: rgba(0, 180, 216, 0.2) !important; }
+  hr { border-color: #E2E8F0 !important; }
 
   /* ── MESSAGES ── */
-  .stSuccess { background: rgba(16, 185, 129, 0.1) !important; border-left: 4px solid #10B981 !important; }
-  .stError { background: rgba(239, 68, 68, 0.1) !important; border-left: 4px solid #EF4444 !important; }
-  .stWarning { background: rgba(245, 158, 11, 0.1) !important; border-left: 4px solid #F59E0B !important; }
-  .stInfo { background: rgba(0, 180, 216, 0.1) !important; border-left: 4px solid #00B4D8 !important; }
+  .stSuccess { background: #ECFDF5 !important; border-left: 4px solid #10B981 !important; color: #047857 !important; }
+  .stError { background: #FEF2F2 !important; border-left: 4px solid #DC2626 !important; color: #991B1B !important; }
+  .stWarning { background: #FEF3C7 !important; border-left: 4px solid #D97706 !important; color: #92400E !important; }
+  .stInfo { background: #E0F2FE !important; border-left: 4px solid #0F6B9C !important; color: #0C4A6E !important; }
+
+  /* ── CAPTION ── */
+  .stMarkdown p { color: #475569 !important; }
 </style>
 """, unsafe_allow_html=True)
 
