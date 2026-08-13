@@ -1,0 +1,6 @@
+[build]
+  publish = "app-deploy"
+  command = "echo 'IHC Tool™ Client - Static deploy'"
+
+[context.production]
+  publish = "app-deploy"
