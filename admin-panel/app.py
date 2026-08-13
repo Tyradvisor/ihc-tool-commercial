@@ -174,8 +174,8 @@ st.markdown("""
 
   /* ── BUTTONS ── */
   .stButton > button {
-    background: linear-gradient(135deg, #00D4FF 0%, #00A8CC 100%);
-    color: #0F1419;
+    background: linear-gradient(135deg, #0F6B9C 0%, #0A4F7A 100%);
+    color: #FFFFFF;
     border: none;
     border-radius: 8px;
     font-weight: 700;
@@ -188,7 +188,7 @@ st.markdown("""
 
   .stButton > button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 32px rgba(0, 212, 255, 0.3);
+    box-shadow: 0 12px 32px rgba(15, 107, 156, 0.4);
   }
 
   /* ── INPUTS ── */
