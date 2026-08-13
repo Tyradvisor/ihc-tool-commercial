@@ -34,25 +34,24 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ── CSS PROFESIONAL ───────────────────────────────────────────
-# Cache buster: fuerza recarga del CSS
+# ── CSS TEMA OSCURO ELEGANTE ─────────────────────────────────
+# Dark mode profesional con cyan brillante (#00D4FF) - v3.0
 st.markdown("""
 <style>
-  /* v2.1 - Tema profesional claro */
   * { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; }
 
   body, .main {
-    background: #F8FAFC;
-    color: #1E293B;
+    background: #0F1419;
+    color: #E2E8F0;
   }
 
   /* ── LOGIN ── */
   .login-container {
-    background: white;
+    background: linear-gradient(135deg, #1A2332 0%, #0F1E2D 100%);
     border-radius: 16px;
     padding: 48px 40px;
-    box-shadow: 0 10px 30px rgba(15, 107, 156, 0.15);
-    border: 1px solid #E2E8F0;
+    box-shadow: 0 20px 60px rgba(0, 212, 255, 0.15);
+    border: 1px solid rgba(0, 212, 255, 0.2);
   }
 
   .login-header {
@@ -63,169 +62,163 @@ st.markdown("""
   .login-title {
     font-size: 36px;
     font-weight: 900;
-    color: #0F6B9C;
+    color: #00D4FF;
     margin: 0;
     letter-spacing: -0.5px;
   }
 
   .login-subtitle {
     font-size: 13px;
-    color: #64748B;
+    color: #94A3B8;
     margin-top: 8px;
     letter-spacing: 0.5px;
     text-transform: uppercase;
     font-weight: 500;
   }
 
-  /* ── TOPBAR ── */
-  .topbar {
-    background: white;
-    padding: 16px 24px;
-    border-bottom: 2px solid #0F6B9C;
-    margin-bottom: 24px;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(15, 107, 156, 0.08);
-  }
-
-  /* ── METRIC CARDS ── */
+  /* ── METRIC CARDS MODERNO ── */
   .metric-card {
-    background: white;
-    border-radius: 12px;
-    padding: 24px;
-    border: 1px solid #E2E8F0;
-    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #1A2332 0%, #0D1F2D 100%);
+    border-radius: 14px;
+    padding: 28px;
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    box-shadow: 0 8px 24px rgba(0, 212, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     margin-bottom: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   }
 
   .metric-card:hover {
-    border-color: #0F6B9C;
-    box-shadow: 0 8px 20px rgba(15, 107, 156, 0.12);
-    transform: translateY(-2px);
+    border-color: rgba(0, 212, 255, 0.4);
+    box-shadow: 0 12px 32px rgba(0, 212, 255, 0.2);
+    transform: translateY(-4px);
   }
 
   .metric-label {
     font-size: 12px;
-    color: #64748B;
+    color: #94A3B8;
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     font-weight: 600;
   }
 
   .metric-value {
-    font-size: 32px;
-    color: #0F6B9C;
-    font-weight: 700;
+    font-size: 36px;
+    color: #00D4FF;
+    font-weight: 800;
   }
 
-  /* ── BADGES ── */
+  /* ── BADGES OSCUROS ── */
   .badge-activa {
-    background: #ECFDF5;
+    background: rgba(16, 185, 129, 0.15);
     color: #10B981;
     padding: 6px 12px;
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
-    border: 1px solid #BBEAD7;
+    border: 1px solid rgba(16, 185, 129, 0.3);
     display: inline-block;
   }
 
   .badge-expirada {
-    background: #FEF2F2;
-    color: #DC2626;
+    background: rgba(239, 68, 68, 0.15);
+    color: #EF4444;
     padding: 6px 12px;
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
-    border: 1px solid #FECACA;
+    border: 1px solid rgba(239, 68, 68, 0.3);
     display: inline-block;
   }
 
   .badge-suspendida {
-    background: #FEF3C7;
-    color: #D97706;
+    background: rgba(245, 158, 11, 0.15);
+    color: #F59E0B;
     padding: 6px 12px;
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
-    border: 1px solid #FCD34D;
+    border: 1px solid rgba(245, 158, 11, 0.3);
     display: inline-block;
   }
 
   .badge-piloto {
-    background: #E0F2FE;
-    color: #0F6B9C;
+    background: rgba(0, 212, 255, 0.15);
+    color: #00D4FF;
     padding: 6px 12px;
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
-    border: 1px solid #BAE6FD;
+    border: 1px solid rgba(0, 212, 255, 0.3);
     display: inline-block;
   }
 
   .badge-revocada {
-    background: #F3F4F6;
-    color: #6B7280;
+    background: rgba(107, 114, 128, 0.15);
+    color: #9CA3AF;
     padding: 6px 12px;
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
-    border: 1px solid #D1D5DB;
+    border: 1px solid rgba(107, 114, 128, 0.3);
     display: inline-block;
   }
 
   /* ── HEADERS ── */
-  .stMarkdown h1 { color: #0F6B9C !important; font-weight: 900 !important; margin-bottom: 16px !important; }
-  .stMarkdown h2 { color: #1E293B !important; font-weight: 700 !important; }
-  .stMarkdown h3 { color: #334155 !important; font-weight: 600 !important; }
+  .stMarkdown h1 { color: #00D4FF !important; font-weight: 900 !important; margin-bottom: 16px !important; }
+  .stMarkdown h2 { color: #E2E8F0 !important; font-weight: 700 !important; }
+  .stMarkdown h3 { color: #CBD5E1 !important; font-weight: 600 !important; }
 
   /* ── DATAFRAME ── */
-  .stDataFrame { background: white !important; border-radius: 8px !important; }
+  .stDataFrame { background: linear-gradient(135deg, #1A2332 0%, #0D1F2D 100%) !important; border: 1px solid rgba(0, 212, 255, 0.15) !important; border-radius: 8px !important; }
 
   /* ── BUTTONS ── */
   .stButton > button {
-    background: linear-gradient(135deg, #0F6B9C 0%, #0A4F7A 100%);
-    color: white;
+    background: linear-gradient(135deg, #00D4FF 0%, #00A8CC 100%);
+    color: #0F1419;
     border: none;
     border-radius: 8px;
-    font-weight: 600;
+    font-weight: 700;
     transition: all 0.3s ease;
-    padding: 10px 24px !important;
+    padding: 12px 24px !important;
+    text-transform: uppercase;
+    font-size: 13px;
+    letter-spacing: 0.5px;
   }
 
   .stButton > button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(15, 107, 156, 0.3);
+    box-shadow: 0 12px 32px rgba(0, 212, 255, 0.3);
   }
 
   /* ── INPUTS ── */
   .stTextInput > div > div > input,
   .stTextArea > div > div > textarea,
   .stSelectbox > div > div > select {
-    background: white !important;
-    border: 1px solid #E2E8F0 !important;
-    color: #1E293B !important;
+    background: rgba(26, 35, 50, 0.8) !important;
+    border: 1px solid rgba(0, 212, 255, 0.2) !important;
+    color: #E2E8F0 !important;
     border-radius: 8px !important;
-    padding: 10px 12px !important;
+    transition: all 0.2s ease !important;
   }
 
   .stTextInput > div > div > input:focus,
   .stTextArea > div > div > textarea:focus,
   .stSelectbox > div > div > select:focus {
-    border-color: #0F6B9C !important;
-    box-shadow: 0 0 0 3px rgba(15, 107, 156, 0.1) !important;
+    border-color: rgba(0, 212, 255, 0.5) !important;
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1) !important;
+    background: rgba(26, 35, 50, 1) !important;
   }
 
   /* ── SIDEBAR ── */
   section[data-testid="stSidebar"],
   .stSidebar {
-    background: white !important;
-    border-right: 1px solid #E2E8F0;
+    background: rgba(15, 20, 25, 0.95) !important;
+    border-right: 1px solid rgba(0, 212, 255, 0.15) !important;
   }
 
   section[data-testid="stSidebar"] *:not(button):not(svg):not(path) {
-    color: #1E293B !important;
+    color: #E2E8F0 !important;
   }
 
   section[data-testid="stSidebar"] div[role="radiogroup"] > label {
@@ -238,26 +231,26 @@ st.markdown("""
   }
 
   section[data-testid="stSidebar"] div[role="radiogroup"] > label:hover {
-    background: #F0F9FF !important;
-    border-color: #E0F2FE !important;
+    background: rgba(0, 212, 255, 0.1) !important;
+    border-color: rgba(0, 212, 255, 0.2) !important;
   }
 
   section[data-testid="stSidebar"] div[role="radiogroup"] > label:has(input:checked) {
-    background: #E0F2FE !important;
-    border-color: #0F6B9C !important;
+    background: rgba(0, 212, 255, 0.2) !important;
+    border-color: rgba(0, 212, 255, 0.4) !important;
   }
 
   /* ── DIVIDER ── */
-  hr { border-color: #E2E8F0 !important; }
+  hr { border-color: rgba(0, 212, 255, 0.15) !important; }
 
   /* ── MESSAGES ── */
-  .stSuccess { background: #ECFDF5 !important; border-left: 4px solid #10B981 !important; color: #047857 !important; }
-  .stError { background: #FEF2F2 !important; border-left: 4px solid #DC2626 !important; color: #991B1B !important; }
-  .stWarning { background: #FEF3C7 !important; border-left: 4px solid #D97706 !important; color: #92400E !important; }
-  .stInfo { background: #E0F2FE !important; border-left: 4px solid #0F6B9C !important; color: #0C4A6E !important; }
+  .stSuccess { background: rgba(16, 185, 129, 0.1) !important; border-left: 4px solid #10B981 !important; color: #10B981 !important; }
+  .stError { background: rgba(239, 68, 68, 0.1) !important; border-left: 4px solid #EF4444 !important; color: #EF4444 !important; }
+  .stWarning { background: rgba(245, 158, 11, 0.1) !important; border-left: 4px solid #F59E0B !important; color: #F59E0B !important; }
+  .stInfo { background: rgba(0, 212, 255, 0.1) !important; border-left: 4px solid #00D4FF !important; color: #00D4FF !important; }
 
   /* ── CAPTION ── */
-  .stMarkdown p { color: #475569 !important; }
+  .stMarkdown p { color: #CBD5E1 !important; }
 </style>
 """, unsafe_allow_html=True)
 

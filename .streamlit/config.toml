@@ -1,9 +1,14 @@
 [theme]
-primaryColor = "#0F6B9C"
-backgroundColor = "#F8FAFC"
-secondaryBackgroundColor = "#FFFFFF"
-textColor = "#1E293B"
+# Tema oscuro elegante - Dark mode profesional
+primaryColor = "#00D4FF"            # Cyan brillante (accents, hover states)
+backgroundColor = "#0F1419"        # Negro muy oscuro (body background)
+secondaryBackgroundColor = "#1A2332" # Gris oscuro (cards, sidebar)
+textColor = "#E2E8F0"              # Gris muy claro (texto principal)
 font = "sans serif"
 
 [client]
 showErrorDetails = false
+toolbarMode = "minimal"
+
+[logger]
+level = "error"
