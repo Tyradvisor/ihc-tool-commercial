@@ -18,10 +18,9 @@
 
     /* ─── TOPBAR ─────────────────────────────────────────── */
     .topbar {
-      background: var(--primary); color: #fff; min-height: 58px;
+      background: var(--primary); color: #fff; height: 58px;
       display: flex; align-items: center; justify-content: space-between;
-      flex-wrap: wrap; row-gap: 8px;
-      padding: 8px 32px; position: sticky; top: 0; z-index: 100;
+      padding: 0 32px; position: sticky; top: 0; z-index: 100;
       box-shadow: 0 2px 10px rgba(0,0,0,0.3);
     }
     .tb-brand { display: flex; align-items: center; gap: 12px; }
@@ -30,13 +29,13 @@
     .tb-prod { font-size: 13px; color: rgba(255,255,255,0.7); }
     .tb-badge { font-size: 9px; background: var(--accent); color: var(--primary);
       padding: 2px 6px; border-radius: 4px; font-weight: 800; margin-left: 4px; }
-    .tb-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
-    #clientNameInput, #emisorInput {
+    .tb-right { display: flex; align-items: center; gap: 10px; }
+    #clientNameInput {
       background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
       color: #fff; padding: 5px 10px; border-radius: 6px; font-size: 13px;
-      font-family: inherit; min-width: 150px; outline: none;
+      font-family: inherit; min-width: 220px; outline: none;
     }
-    #clientNameInput::placeholder, #emisorInput::placeholder { color: rgba(255,255,255,0.35); }
+    #clientNameInput::placeholder { color: rgba(255,255,255,0.35); }
     .tb-btn {
       background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
       color: rgba(255,255,255,0.8); padding: 5px 12px; border-radius: 6px;
@@ -49,6 +48,8 @@
     .subnav {
       background: var(--primary-mid); padding: 0 32px;
       display: flex; gap: 2px; overflow-x: auto;
+      position: sticky; top: 58px; z-index: 50;
+      background: rgba(30, 58, 95, 0.98);
     }
     .subnav::-webkit-scrollbar { display: none; }
     .subnav a {
@@ -99,9 +100,13 @@
     .btn-primary {
       background: var(--accent); color: var(--primary); border: none; padding: 12px 28px;
       border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
-      font-family: inherit; transition: all 0.15s;
+      font-family: inherit; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    .btn-primary:hover { background: #00C8F0; }
+    .btn-primary:hover {
+      background: #00C8F0; transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,180,216,0.3);
+    }
+    .btn-primary:active { transform: translateY(0); }
     .btn-secondary {
       background: transparent; border: 1px solid var(--border); color: var(--muted);
       padding: 12px 22px; border-radius: 8px; font-size: 13px; cursor: pointer;
@@ -204,18 +209,23 @@
     .card {
       background: var(--card); border-radius: 12px; padding: 18px 20px;
       border: 1px solid var(--border); box-shadow: var(--shadow);
+      transition: all 0.2s ease; position: relative;
+    }
+    .card:hover {
+      border-color: var(--accent); box-shadow: 0 4px 16px rgba(0,180,216,0.12);
     }
     .card-title { font-size: 11px; font-weight: 700; color: var(--muted);
       text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 14px; }
     .badge {
       display: inline-flex; align-items: center; gap: 5px;
-      padding: 3px 9px; border-radius: 20px; font-size: 10.5px; font-weight: 700;
+      padding: 4px 10px; border-radius: 20px; font-size: 10.5px; font-weight: 700;
+      transition: all 0.2s ease;
     }
     .badge::before { content: '●'; font-size: 7px; }
-    .badge.red    { background: rgba(239,68,68,0.1); color: var(--red); }
-    .badge.yellow { background: rgba(245,158,11,0.1); color: var(--yellow); }
-    .badge.green  { background: rgba(16,185,129,0.1); color: var(--green); }
-    .badge.blue   { background: rgba(0,180,216,0.1); color: var(--accent); }
+    .badge.red    { background: rgba(239,68,68,0.15); color: #b91c1c; border: 1px solid rgba(239,68,68,0.3); }
+    .badge.yellow { background: rgba(245,158,11,0.15); color: #92400e; border: 1px solid rgba(245,158,11,0.3); }
+    .badge.green  { background: rgba(16,185,129,0.15); color: #065f46; border: 1px solid rgba(16,185,129,0.3); }
+    .badge.blue   { background: rgba(0,180,216,0.15); color: #0369a1; border: 1px solid rgba(0,180,216,0.3); }
     .badge.gray   { background: rgba(100,116,139,0.1); color: var(--muted); }
 
     /* ─── BIG METRIC ─────────────────────────────────────── */
@@ -301,22 +311,40 @@
       .impact-grid { grid-template-columns: 1fr 1fr; }
       .period-tabs { flex-direction: column; }
     }
-    /* ─── RESPONSIVE TOPBAR (tablet / móvil) ──────────────── */
-    @media (max-width: 1024px) {
-      .topbar { height: auto; flex-wrap: wrap; padding: 8px 16px; row-gap: 8px; }
-      .tb-right { flex-wrap: wrap; width: 100%; justify-content: flex-end; gap: 8px; }
-      #clientNameInput, #emisorInput { min-width: 0; flex: 1 1 150px; }
-      .subnav { padding: 0 16px; }
-      .container { padding: 20px 16px 48px; }
-      .upload-wrap { min-height: auto; }
+    @media (max-width: 768px) {
+      .topbar { padding: 0 16px; flex-wrap: wrap; }
+      .tb-prod { display: none; }
+      .subnav { padding: 0 16px; gap: 0; }
+      .subnav a { padding: 8px 10px; font-size: 10px; }
+      .container { padding: 16px 16px 40px; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .c3, .c4 { grid-template-columns: 1fr; }
+      .row { gap: 10px; }
+      .card { padding: 14px 16px; }
+      .upload-card { padding: 32px 24px; }
+      .tbl { font-size: 10.5px; }
     }
-    @media (max-width: 560px) {
-      .tb-brand { width: 100%; }
-      .tb-right { justify-content: flex-start; }
-      .tb-btn { flex: 1 1 calc(50% - 4px); min-width: 0; text-align: center; }
-      #clientNameInput, #emisorInput { flex: 1 1 100%; }
+    @media (max-width: 480px) {
+      .topbar { height: auto; flex-direction: column; gap: 10px; padding: 12px 16px; }
+      .tb-brand { flex-direction: column; }
+      .tb-logo { font-size: 18px; }
+      .tb-sep { display: none; }
+      .tb-right { display: none !important; }
+      .subnav { padding: 8px 16px; gap: 0; }
+      .subnav a { padding: 6px 8px; font-size: 9px; }
+      .container { padding: 12px 12px 32px; }
+      .kpi-grid { grid-template-columns: 1fr; }
+      .score-ring { width: 100px; height: 100px; }
+      .score-num { font-size: 28px; }
+      .card { padding: 12px 14px; }
+      .upload-card { padding: 24px 16px; }
+      .upload-title { font-size: 20px; }
+      .sec-icon { width: 30px; height: 30px; font-size: 14px; }
+      .sec-title { font-size: 14px; }
+      .tbl { font-size: 9.5px; }
+      .tbl th, .tbl td { padding: 4px 6px; }
+      .badge { font-size: 9px; padding: 2px 6px; }
     }
-
     @media print { .topbar, .subnav { position: relative; } }
 
     /* ─── TYC CHECKBOX ─────────────────────────────────────────────────────── */
@@ -335,21 +363,79 @@
     #ihc-login-btn.tyc-locked {
       opacity: 0.4 !important; pointer-events: none !important; cursor: not-allowed;
     }
+
+    /* ─── LOGIN OVERLAY ───────────────────────────────────────────── */
+    .login-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex;
+      align-items: center; justify-content: center; z-index: 10000;
+    }
+    .login-card {
+      background: var(--card); border-radius: 16px; padding: 48px 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-width: 420px; width: 90%;
+    }
+    .login-title { font-size: 28px; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
+    .login-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+    .login-form { display: flex; flex-direction: column; gap: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; font-weight: 600; color: var(--primary); }
+    .form-group input {
+      padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px;
+      font-family: inherit; font-size: 13px; background: #fff; transition: all 0.2s;
+    }
+    .form-group input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,180,216,0.1); }
+    .password-wrapper {
+      position: relative; display: flex; align-items: center;
+    }
+    .password-wrapper input { flex: 1; padding-right: 40px; }
+    .password-toggle {
+      position: absolute; right: 12px; background: none; border: none; cursor: pointer;
+      font-size: 16px; color: var(--muted); padding: 4px 8px; transition: color 0.2s;
+    }
+    .password-toggle:hover { color: var(--primary); }
+    .login-btn {
+      padding: 12px 28px; background: var(--accent); color: var(--primary); border: none;
+      border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;
+      font-family: inherit; transition: all 0.15s;
+    }
+    .login-btn:hover { background: #00C8F0; }
+    .login-error { color: #EF4444; font-size: 12px; margin-top: 12px; text-align: center; }
   </style>
 </head>
 <body>
+
+<!-- ══ LOGIN OVERLAY ═════════════════════════════════════════════════════ -->
+<div id="loginOverlay" class="login-overlay" style="display:none">
+  <div class="login-card">
+    <div class="login-title">IHC Tool™</div>
+    <div class="login-subtitle">Verifica tu acceso para continuar</div>
+    <div class="login-form">
+      <div class="form-group">
+        <label>Email o Token de Licencia</label>
+        <input type="text" id="loginEmail" placeholder="cliente@empresa.com" />
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <div class="password-wrapper">
+          <input type="password" id="loginPassword" placeholder="Tu contraseña" />
+          <button class="password-toggle" id="togglePassword" type="button" title="Mostrar contraseña">👁️</button>
+        </div>
+      </div>
+      <button class="login-btn" onclick="handleLogin()">Ingresar</button>
+      <div class="login-error" id="loginError"></div>
+    </div>
+  </div>
+</div>
 
 <!-- ══ TOP BAR ══════════════════════════════════════════════════════════ -->
 <div class="topbar">
   <div class="tb-brand">
     <div class="tb-logo">TyrAdvisor</div>
     <div class="tb-sep"></div>
-    <div class="tb-prod">Inventory Health Check<span class="tb-badge">™</span></div>
+    <div class="tb-prod">IHC Tool™</div>
   </div>
   <div class="tb-right" id="topbarRight" style="display:none">
-    <input id="clientNameInput" type="text" placeholder="Preparado para..." title="Nombre del receptor del informe (cliente/empresa)" maxlength="60">
-    <input id="emisorInput" type="text" placeholder="Preparado por..." title="Nombre de quien genera el informe" maxlength="60">
-    <button class="tb-btn" id="btnResumenEjec" onclick="openResumenEjecutivo()" style="display:none">📄 Resumen Ejecutivo</button>
+    <input id="clientNameInput" type="text" placeholder="Nombre del cliente..." maxlength="60">
+    <button class="tb-btn" onclick="downloadAnalysisExcel()">📥 Descargar Excel</button>
     <button class="tb-btn" onclick="window.print()">🖨 Imprimir PDF</button>
     <button class="tb-btn" onclick="resetApp()">↩ Nuevo análisis</button>
   </div>
@@ -365,9 +451,9 @@
   <a href="#abc">06 · ABC</a>
   <a href="#causas">07 · Causas Raíz</a>
   <a href="#benchmark">08 · Benchmark</a>
-  <a href="#obsolescencia">09 · Obsolescencia</a>
-  <a href="#madurez">10 · Madurez</a>
-  <a href="#plan">11 · Plan de Acción</a>
+  <a href="#madurez">09 · Madurez</a>
+  <a href="#plan">10 · Plan de Acción</a>
+  <a href="#obsolescencia">11 · Obsolescencia</a>
 </div>
 
 <!-- ══ SCREEN 1: UPLOAD ══════════════════════════════════════════════════ -->
@@ -557,15 +643,9 @@ function parseFile(file) {
       if (rows.length === 0) throw new Error('No se encontraron filas con datos válidos.');
 
       // ── SKU LIMIT VALIDATION ──
-      const maxSkus = window.ihcLicense?.getMaxSkus?.() || 0;
-      // maxSkus = -1 means unlimited (Enterprise)
-      // maxSkus = 0 means no license yet
-      // maxSkus > 0 means limit applies (Starter, Pro)
-      if (maxSkus > 0 && rows.length > maxSkus) {
-        throw new Error(`Tu plan permite máximo ${maxSkus.toLocaleString('es-CL')} SKUs, pero el archivo contiene ${rows.length.toLocaleString('es-CL')}. Contacta a soporte para ampliar el límite.`);
-      }
-      if (maxSkus === 0) {
-        throw new Error('Sin licencia válida. Inicia sesión para continuar.');
+      const maxSkus = window.ihcLicense?.getMaxSkus?.() || Infinity;
+      if (rows.length > maxSkus) {
+        throw new Error(`Tu plan permite máximo ${maxSkus} SKUs, pero el archivo contiene ${rows.length}. Contacta a soporte para ampliar el límite.`);
       }
 
       S.rows = rows;
@@ -583,13 +663,6 @@ function parseFile(file) {
 function parseDate(v) {
   if (v instanceof Date) return v;
   if (typeof v === 'number') return new Date((v - 25569) * 86400 * 1000); // Excel serial
-
-  // Handle YYYY-MM-DD as local date (not UTC)
-  if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) {
-    const [year, month, day] = v.split('-').map(Number);
-    return new Date(year, month - 1, day);
-  }
-
   const d = new Date(v);
   return isNaN(d) ? null : d;
 }
@@ -602,17 +675,14 @@ function calcAll() {
   const totalValue = rows.reduce((s,r) => s + r.sys * r.val, 0);
 
   // ── ABC ──
-  // Create sorted array with original index to avoid losing SKUs on duplicates
-  const sorted = rows.map((r, idx) => ({ ...r, sv: r.sys * r.val, _idx: idx })).sort((a,b)=>b.sv-a.sv);
+  const sorted = rows.map(r => ({ ...r, sv: r.sys * r.val })).sort((a,b)=>b.sv-a.sv);
   let cum = 0;
-  sorted.forEach(r => {
-    cum += r.sv;
-    r.abc = totalValue <= 0 ? 'C' : cum/totalValue <= 0.80 ? 'A' : cum/totalValue <= 0.95 ? 'B' : 'C';
-  });
+  sorted.forEach(r => { cum += r.sv; r.abc = cum/totalValue <= 0.80 ? 'A' : cum/totalValue <= 0.95 ? 'B' : 'C'; });
   const abcA = sorted.filter(r=>r.abc==='A'), abcB = sorted.filter(r=>r.abc==='B'), abcC = sorted.filter(r=>r.abc==='C');
   const abcAval = abcA.reduce((s,r)=>s+r.sv,0), abcBval = abcB.reduce((s,r)=>s+r.sv,0), abcCval = abcC.reduce((s,r)=>s+r.sv,0);
-  // Re-attach abc to original rows by index to handle duplicate SKUs correctly
-  sorted.forEach(r => { rows[r._idx].abc = r.abc; });
+  // re-attach abc to original rows
+  const abcMap = Object.fromEntries(sorted.map(r=>[r.sku, r.abc]));
+  rows.forEach(r => r.abc = abcMap[r.sku] || 'C');
 
   // ── EXACTITUD ──
   const withFis = rows.filter(r => r.fis !== null);
@@ -677,10 +747,10 @@ function calcAll() {
   let ovMod=0, ovCrit=0;
   const withSales = rows.filter(r => r.sales !== null && r.sales > 0);
   withSales.forEach(r => {
-    const covDays = r.sys / (r.sales/30);
+    const covDays = r.sales > 0 ? r.sys / (r.sales/30) : Infinity;
     const sv = r.sys * r.val;
-    if (covDays > 60 && covDays <= 120) ovMod += sv;
-    else if (covDays > 120) ovCrit += sv;
+    if (covDays > 90 && covDays <= 180) ovMod += sv;
+    else if (covDays > 180) ovCrit += sv;
   });
 
   // ── EXACTITUD POR CATEGORÍA ──
@@ -695,26 +765,16 @@ function calcAll() {
   const catLabels  = Object.keys(cats).slice(0,6);
   const catExact   = catLabels.map(c => +(cats[c].exact/cats[c].total*100).toFixed(1));
 
-  // ── ABC EXACTITUD (por clase) ──
-  // Calcula la exactitud (IRA) de cada clase ABC: % de SKUs con diferencia <=1%
-  // entre sistema y conteo físico, considerando solo los SKUs que tienen conteo físico.
-  const iraForClass = cls => {
-    const set = withFis.filter(r => r.abc === cls);
-    if (set.length === 0) return null;
-    let ok = 0;
-    set.forEach(r => { const diff = Math.abs(r.sys - r.fis); if ((r.sys > 0 ? diff / r.sys : 1) <= 0.01) ok++; });
-    return +(ok / set.length * 100).toFixed(1);
-  };
-  const iraA = iraForClass('A');
-  const iraB = iraForClass('B');
-  const iraC = iraForClass('C');
+  // ── ABC EXACTITUD ──
+  const abcAexact = withFis.filter(r=>r.abc==='A');
+  let aEx=0;
+  abcAexact.forEach(r => { const d=Math.abs(r.sys-r.fis); if(r.sys>0?d/r.sys:1 <= 0.01) aEx++; });
+  const iraA = abcAexact.length > 0 ? +(aEx/abcAexact.length*100).toFixed(1) : null;
 
   // ── BENCHMARK (from questionnaire) ──
   const yesCount = S.answers.filter(a=>a===true).length;
   const benchScore = yesCount * 10;
-  // Deterministic benchmark values based on company maturity level
-  const determinisicBenchVals = [65, 48, 52, 42, 55, 38, 45, 60, 35, 40];
-  const benchVals  = S.answers.map((a,i) => a ? 85 : determinisicBenchVals[i]);
+  const benchVals  = S.answers.map((a,i) => a ? 85 : Math.floor(Math.random()*30)+5);
   const benchBP    = [97, 95, 90, 95, 90, 85, 80, 85, 80, 85];
   const benchLabels= QUESTIONS.map(q => q.bench);
 
@@ -748,7 +808,7 @@ function calcAll() {
     agingVal, agingCnt, agingRisk, agingRiskPct,
     quiebres, qA, qB, qC,
     ovMod, ovCrit, ovTotal, hasSales,
-    abcA, abcB, abcC, abcAval, abcBval, abcCval, iraA, iraB, iraC,
+    abcA, abcB, abcC, abcAval, abcBval, abcCval, iraA,
     catLabels, catExact,
     causes,
     benchScore, benchVals, benchBP, benchLabels, yesCount,
@@ -758,7 +818,7 @@ function calcAll() {
 }
 
 // ─── FORMAT HELPERS ───────────────────────────────────────────────────────
-const M = n => { const s = S.sym; return n >= 1e9 ? s+(n/1e9).toFixed(1)+'B' : n >= 1e6 ? s+(n/1e6).toFixed(1)+'M' : n >= 1e3 ? s+(n/1e3).toFixed(0)+'K' : s+Math.round(n); };
+const M = n => { const s = S.sym; return n >= 1e9 ? s+Math.round(n/1e6)+'MM' : n >= 1e6 ? s+(n/1e6).toFixed(1)+'MM' : n >= 1e3 ? s+(n/1e3).toFixed(0)+'K' : s+Math.round(n); };
 const pct = n => n !== null ? n.toFixed(1)+'%' : 'N/D';
 const gc  = n => n < 50 ? 'red' : n < 80 ? 'yellow' : 'green';
 
@@ -790,7 +850,7 @@ function renderDashboard() {
   const iraClass = d.ira !== null ? gc(d.ira) : 'blue';
   document.getElementById('kpiGrid').innerHTML = `
     <div class="kpi-card ${iraClass}">
-      <div class="kpi-label">Exactitud IRA</div>
+      <div class="kpi-label" title="Inventario Registro Accuracy - Coincidencia entre sistema y conteo físico">Exactitud IRA</div>
       <div class="kpi-value">${iraText}</div>
       <div class="kpi-tag">${d.ira !== null ? (d.ira<95?'🔴 Meta ≥95%':'✅ Dentro de meta') : '⚠ Sin conteo físico'}</div>
     </div>
@@ -820,22 +880,22 @@ function renderDashboard() {
       <div class="kpi-tag">${d.agingRisk>0?(d.agingRiskPct>20?'🔴 aging elevado':'🟡 revisar'):'⚠ Sin fechas'}</div>
     </div>
     <div class="kpi-card ${d.benchScore<50?'red':'yellow'}">
-      <div class="kpi-label">Riesgo operac.</div>
+      <div class="kpi-label" title="Evaluación de riesgos en procesos operacionales">Riesgo operac.</div>
       <div class="kpi-value" style="font-size:16px">${d.benchScore<40?'ALTO':d.benchScore<70?'MED-ALTO':'MEDIO'}</div>
       <div class="kpi-tag">${d.yesCount} de 10 procesos OK</div>
     </div>
     <div class="kpi-card ${d.benchScore<50?'red':'yellow'}">
-      <div class="kpi-label">Riesgo financ.</div>
+      <div class="kpi-label" title="Evaluación de exposición financiera e impacto económico">Riesgo financ.</div>
       <div class="kpi-value" style="font-size:16px">${d.score<50?'ALTO':d.score<70?'MEDIO':'BAJO'}</div>
       <div class="kpi-tag">Score: ${d.score}/100</div>
     </div>
     <div class="kpi-card yellow">
-      <div class="kpi-label">Madurez</div>
+      <div class="kpi-label" title="Nivel de madurez en gestión de inventario - De caótico a optimizado">Madurez</div>
       <div class="kpi-value">Niv.${d.matLevel}<span class="kpi-unit">/5</span></div>
       <div class="kpi-tag">🟡 ${['','Caótico','Reactivo','Definido','Medido','Optimizado'][d.matLevel]}</div>
     </div>
     <div class="kpi-card ${gc(d.benchScore)}">
-      <div class="kpi-label">Benchmark</div>
+      <div class="kpi-label" title="Comparación contra mejores prácticas de la industria">Benchmark</div>
       <div class="kpi-value">${d.benchScore}<span class="kpi-unit">%</span></div>
       <div class="kpi-tag">vs best practice</div>
     </div>
@@ -853,9 +913,9 @@ function renderDashboard() {
   w.appendChild(secABC(d));
   w.appendChild(secCausas(d));
   w.appendChild(secBenchmark(d));
-  w.appendChild(secObsolescencia(d));
   w.appendChild(secMadurez(d));
   w.appendChild(secPlan(d));
+  w.appendChild(secObsolescencia(d));
 
   // Charts (deferred to allow DOM to settle)
   requestAnimationFrame(() => { renderCharts(d); renderObsSkuTable(0); });
@@ -998,8 +1058,7 @@ function secRiesgos(d) {
 
 function secABC(d) {
   const av = d.abcAval, bv = d.abcBval, cv = d.abcCval, total = av+bv+cv;
-  const iraBadge = v => v !== null ? `<span class="badge ${gc(v)}">${pct(v)}</span>` : '<span class="badge gray">N/D</span>';
-  const iraA = iraBadge(d.iraA), iraBb = iraBadge(d.iraB), iraCc = iraBadge(d.iraC);
+  const iraA = d.iraA !== null ? `<span class="badge ${gc(d.iraA)}">${pct(d.iraA)}</span>` : '<span class="badge gray">N/D</span>';
   return section('abc','📈','06','Criticidad ABC','Concentración de valor y nivel de control requerido',`Clase A: ${(av/total*100).toFixed(0)}% del valor`,'yellow',`
     <div class="row c3">
       ${card('Distribución por Valor','<div class="chart-wrap" style="height:200px"><canvas id="c-abc"></canvas></div>')}
@@ -1009,8 +1068,8 @@ function secABC(d) {
           <thead><tr><th>Clase</th><th>SKUs</th><th>% SKUs</th><th>Valor Stock</th><th>% Valor</th><th>Exactitud</th><th>Meta</th></tr></thead>
           <tbody>
             <tr><td><strong style="color:var(--red)">A — Crítico</strong></td><td>${d.abcA.length}</td><td>${(d.abcA.length/d.totalSKUs*100).toFixed(0)}%</td><td>${M(av)}</td><td>${(av/total*100).toFixed(0)}%</td><td>${iraA}</td><td>≥ 99%</td></tr>
-            <tr><td><strong style="color:var(--yellow)">B — Relevante</strong></td><td>${d.abcB.length}</td><td>${(d.abcB.length/d.totalSKUs*100).toFixed(0)}%</td><td>${M(bv)}</td><td>${(bv/total*100).toFixed(0)}%</td><td>${iraBb}</td><td>≥ 95%</td></tr>
-            <tr><td><strong style="color:var(--green)">C — Rutinario</strong></td><td>${d.abcC.length}</td><td>${(d.abcC.length/d.totalSKUs*100).toFixed(0)}%</td><td>${M(cv)}</td><td>${(cv/total*100).toFixed(0)}%</td><td>${iraCc}</td><td>≥ 85%</td></tr>
+            <tr><td><strong style="color:var(--yellow)">B — Relevante</strong></td><td>${d.abcB.length}</td><td>${(d.abcB.length/d.totalSKUs*100).toFixed(0)}%</td><td>${M(bv)}</td><td>${(bv/total*100).toFixed(0)}%</td><td><span class="badge gray">N/D</span></td><td>≥ 95%</td></tr>
+            <tr><td><strong style="color:var(--green)">C — Rutinario</strong></td><td>${d.abcC.length}</td><td>${(d.abcC.length/d.totalSKUs*100).toFixed(0)}%</td><td>${M(cv)}</td><td>${(cv/total*100).toFixed(0)}%</td><td><span class="badge gray">N/D</span></td><td>≥ 85%</td></tr>
           </tbody>
         </table>
         <div class="hl">Los SKUs clase A (${(d.abcA.length/d.totalSKUs*100).toFixed(0)}% del catálogo) concentran el <strong>${(av/total*100).toFixed(0)}% del valor total</strong> (${M(av)}). Son los que requieren el más alto nivel de control y exactitud.</div>
@@ -1047,7 +1106,7 @@ function secMadurez(d) {
   const lvls = ['Caótico','Reactivo','Definido','Medido','Optimizado'];
   const descs = ['Sin procesos formales','Básicos sin control','Estandarizados','KPIs y mejora continua','Automatización predictiva'];
   const lvlHtml = lvls.map((n,i)=>`<div class="mat-lv ${i+1===d.matLevel?'active':''}"><div class="mat-num">${i+1}</div><div class="mat-name">${n}</div><div class="mat-desc">${descs[i]}</div></div>`).join('');
-  return section('madurez','🎓','10','Madurez de Gestión de Inventario','Nivel actual y brecha hacia la excelencia operacional',`Nivel ${d.matLevel} / 5`,'yellow',`
+  return section('madurez','🎓','09','Madurez de Gestión de Inventario','Nivel actual y brecha hacia la excelencia operacional',`Nivel ${d.matLevel} / 5`,'yellow',`
     <div class="card">
       <div class="card-title">Modelo de Madurez — Posición Actual</div>
       <div class="mat-levels">${lvlHtml}</div>
@@ -1093,7 +1152,7 @@ function secPlan(d) {
     <div style="font-size:11px;color:var(--muted)">${acts[i].desc}</div>
     <div style="margin-top:5px;display:flex;gap:5px">${acts[i].tags}</div></div></div>`;
   const potRecov = Math.round((d.faltVal + d.agingVal[4]*0.5 + d.ovCrit*0.3) / 1e6);
-  return section('plan','🚀','11','Plan de Acción Prioritario','Recomendaciones ordenadas por impacto y urgencia','Quick wins + estructurales','blue',`
+  return section('plan','🚀','10','Plan de Acción Prioritario','Recomendaciones ordenadas por impacto y urgencia','Quick wins + estructurales','blue',`
     <div class="row c2">
       ${card('⚡ Acciones Inmediatas — 0 a 30 días','<div style="padding-top:4px">'+ [0,1,2].map(actHtml).join('') +'</div>')}
       ${card('🏗 Acciones Estructurales — 30 a 90 días','<div style="padding-top:4px">'+ [3,4,5].map(actHtml).join('') +'</div>')}
@@ -1110,7 +1169,7 @@ function secPlan(d) {
 
 function secObsolescencia(d) {
   if (!d.hasExpDates) {
-    return section('obsolescencia','⏰','09','Obsolescencia &amp; Vencimientos',
+    return section('obsolescencia','⏰','11','Obsolescencia &amp; Vencimientos',
       'Alertas de SKUs próximos a vencer','Sin columna de vencimiento','gray',
       `<div class="nd-box">⚠ No se encontró la columna <strong>Fecha_Vencimiento</strong>. Agrégala al Excel para activar las alertas de vencimiento por período personalizable.</div>`);
   }
@@ -1138,12 +1197,14 @@ function secObsolescencia(d) {
     return `<button class="period-tab${activeClass}" onclick="setObsPeriod(${i})">${bandIcons[i]} ${lbl.replace('&gt;','>')} — ${bandDesc[i]}</button>`;
   }).join('');
 
-  const criticalCount = d.obsBands[0].length + d.obsExpired.length;
-  const totalExp = d.obsBands.reduce((s,b)=>s+b.length,0) + d.obsExpired.length;
-  const badgeLbl = criticalCount > 0 ? `⚠ ${criticalCount} críticos` : totalExp > 0 ? `${totalExp} registros` : 'Sin alertas';
-  const badgeCls = criticalCount > 0 ? 'red' : totalExp > 0 ? 'yellow' : 'green';
+  const alreadyExpired = d.obsExpired.length;
+  const expiringIn30d = d.obsBands[0].length;
+  const totalCritical = alreadyExpired + expiringIn30d;
+  const totalExp = d.obsBands.reduce((s,b)=>s+b.length,0) + alreadyExpired;
+  const badgeLbl = alreadyExpired > 0 ? `⛔ ${alreadyExpired} vencidos | ⚠ ${expiringIn30d} en 30d` : totalExp > 0 ? `${totalExp} registros` : 'Sin alertas';
+  const badgeCls = alreadyExpired > 0 ? 'red' : totalExp > 0 ? 'yellow' : 'green';
 
-  return section('obsolescencia','⏰','09','Obsolescencia &amp; Vencimientos',
+  return section('obsolescencia','⏰','11','Obsolescencia &amp; Vencimientos',
     'Alertas de SKUs próximos a vencer — período customizable', badgeLbl, badgeCls, `
     ${expiredHtml}
     <div class="row c4" style="margin-bottom:16px">${summaryCards}</div>
@@ -1287,7 +1348,10 @@ function renderCharts(d) {
         ]},
       options:{ responsive:true, maintainAspectRatio:false,
         plugins:{ legend:{ position:'top', labels:{boxWidth:10} } },
-        scales:{ x:{ min:0, max:100, grid:{color:gc2}, ticks:{callback:v=>v+'%'} }, y:{grid:{display:false}} } }
+        scales:{
+          x:{ min:0, max:100, grid:{color:gc2}, ticks:{callback:v=>v+'%'} },
+          y:{ grid:{display:false}, ticks:{font:{size:11}} }
+        } }
     });
   }
 }
@@ -1340,6 +1404,33 @@ function downloadTemplate() {
   XLSX.writeFile(wb, 'plantilla-IHC-TyrAdvisor.xlsx');
 }
 
+// ─── EXPORT ANALYSIS ──────────────────────────────────────────────────────
+function downloadAnalysisExcel() {
+  const d = S.data;
+  const clientName = document.getElementById('clientNameInput').value || 'Cliente';
+  const today = new Date().toLocaleDateString('es-CL');
+
+  const data = [
+    ['ANÁLISIS IHC TOOL™', ''],
+    ['Cliente:', clientName],
+    ['Fecha:', today],
+    [''],
+    ['INDICADORES CLAVE', ''],
+    ['Health Score', d.score + '/100'],
+    ['Exactitud (IRA)', (d.ira || 'N/D') + '%'],
+    ['Total SKUs', d.totalSKUs],
+    ['Valor Stock', S.sym + (d.totalValue/1e6).toFixed(1) + 'MM'],
+    ['SKUs en Quiebre', d.quiebres.length],
+    ['Nivel Madurez', 'Nivel ' + d.matLevel + '/5'],
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch: 40}, {wch: 20}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Análisis');
+  XLSX.writeFile(wb, `ihc-analisis-${clientName}-${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
 // ─── UI HELPERS ────────────────────────────────────────────────────────────
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -1348,253 +1439,6 @@ function showScreen(name) {
   const isDash = name==='dash';
   document.getElementById('topbarRight').style.display = isDash?'flex':'none';
   document.getElementById('subnav').style.display = isDash?'flex':'none';
-  // Resumen Ejecutivo: solo planes Pro y Enterprise
-  if (isDash) {
-    let plan = 'starter';
-    try { plan = (window.ihcLicense && window.ihcLicense.getPlan && window.ihcLicense.getPlan()) || 'starter'; } catch(e){}
-    plan = String(plan).toLowerCase();
-    const btnRE = document.getElementById('btnResumenEjec');
-    if (btnRE) btnRE.style.display = (plan === 'pro' || plan === 'enterprise') ? 'inline-block' : 'none';
-  }
-}
-
-// ─── RESUMEN EJECUTIVO (Pro / Enterprise) ──────────────────────────────────
-function openResumenEjecutivo() {
-  const d = S.data;
-  if (!d || !d.totalSKUs) { alert('Primero genera un análisis cargando el inventario.'); return; }
-  // Receptor (preparado para) y emisor (preparado por) — desde los campos de la topbar
-  const cliente = (document.getElementById('clientNameInput').value || '').trim() || '—';
-  const emisor  = (document.getElementById('emisorInput')?.value || '').trim();
-  const hoy = new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'long', year:'numeric' });
-  const LOGO = 'https://tyradvisor.com/wp-content/uploads/2026/04/Logo-sin-f-1.png';
-
-  // ── Estado y helpers ──
-  const estado = d.score < 50 ? 'Crítico' : d.score < 65 ? 'Atención Requerida' : d.score < 80 ? 'Controlable' : 'Saludable';
-  const estadoColor = d.score < 50 ? '#EF4444' : d.score < 65 ? '#F59E0B' : d.score < 80 ? '#F59E0B' : '#10B981';
-  const iraTxt  = d.ira  !== null ? d.ira.toFixed(1)+'%'  : 'N/D';
-  const iraATxt = d.iraA !== null ? d.iraA.toFixed(1)+'%' : 'N/D';
-  const total = d.abcAval + d.abcBval + d.abcCval;
-  const pctValA = total>0 ? (d.abcAval/total*100).toFixed(0) : '0';
-  const pctSkuA = d.totalSKUs>0 ? (d.abcA.length/d.totalSKUs*100).toFixed(0) : '0';
-  const matNames = ['','Inicial','Básico','Estandarizado','Gestionado','Optimizado'];
-
-  // ── NARRATIVA EJECUTIVA POR DIMENSIONES (nivel consultoría) ──
-  const parrafos = [];
-
-  // P1 — Situación general
-  let p1 = `El presente informe resume el diagnóstico de salud del inventario de <strong>${cliente}</strong>, sobre una base de <strong>${d.totalSKUs.toLocaleString('es-CL')} SKUs</strong> que representan un valor total de <strong>${M(d.totalValue)}</strong>. `;
-  p1 += `El <strong>Health Score global es de ${d.score}/100</strong>, lo que sitúa la operación en un estado <strong style="color:${estadoColor}">${estado}</strong> y en un nivel de madurez <strong>${matNames[d.matLevel]||('Nivel '+d.matLevel)}</strong> (${d.matLevel} de 5). `;
-  p1 += d.score < 65
-    ? `Este resultado indica que el inventario aún no constituye una base confiable para la toma de decisiones y requiere intervención estructurada en el corto plazo.`
-    : d.score < 80
-      ? `La operación tiene fundamentos correctos, pero persisten brechas que limitan su confiabilidad y eficiencia.`
-      : `La operación presenta una gestión sólida; el foco debe estar en sostener y optimizar los indicadores ya alcanzados.`;
-  parrafos.push(p1);
-
-  // P2 — Exactitud (confiabilidad del dato)
-  let p2 = '';
-  if (d.ira !== null) {
-    const unfiable = (100 - d.ira);
-    p2 += `<strong>Confiabilidad del inventario.</strong> La exactitud de registro (IRA) alcanza <strong>${iraTxt}</strong>${d.ira<95?`, bajo el estándar de industria de 95%`:`, en línea con las mejores prácticas`}. `;
-    if (d.ira < 95) {
-      p2 += `En términos prácticos, cerca de <strong>${unfiable.toFixed(0)} de cada 100 registros</strong> no coinciden con la existencia física, lo que obliga a verificaciones de emergencia, erosiona la confianza en el sistema y expone a decisiones de compra y despacho basadas en datos incorrectos. `;
-    }
-    if (d.iraA !== null) {
-      p2 += `Críticamente, la exactitud de la <strong>clase A es de ${iraATxt}</strong>${d.iraA<99?`, muy por debajo del 99% exigible a los ítems de mayor valor`:`, dentro del objetivo`}, ` ;
-      p2 += d.iraA<99 ? `lo que significa que el segmento que concentra el grueso del capital es justamente el menos confiable.` : `asegurando control sobre el capital más relevante.`;
-    }
-  } else {
-    p2 += `<strong>Confiabilidad del inventario.</strong> El archivo analizado no incluyó conteo físico, por lo que no fue posible calcular la exactitud de registro (IRA). Se recomienda incorporar un conteo —al menos de la clase A— para habilitar este diagnóstico, que es la base de cualquier mejora de inventario.`;
-  }
-  if (p2) parrafos.push(p2);
-
-  // P3 — Concentración de valor (ABC)
-  let p3 = `<strong>Concentración del valor.</strong> El análisis ABC confirma el patrón de Pareto: la <strong>clase A concentra el ${pctValA}% del valor</strong> en apenas el ${pctSkuA}% de los SKUs (${d.abcA.length} ítems, ${M(d.abcAval)}). `;
-  p3 += `Esto define con claridad dónde debe enfocarse el control: un esfuerzo acotado sobre estos ${d.abcA.length} ítems protege la mayor parte del capital invertido en inventario.`;
-  parrafos.push(p3);
-
-  // P4 — Costo oculto (capital + obsolescencia + diferencias)
-  let p4 = '', costos = [];
-  if (d.hasSales && d.ovTotal > 0) costos.push(`<strong>${M(d.ovTotal)}</strong> en sobrestock (capital inmovilizado que no rota)`);
-  if (d.agingRisk > 0) costos.push(`<strong>${M(d.agingRisk)}</strong> (${d.agingRiskPct.toFixed(1)}% del stock) con más de 180 días sin movimiento, en riesgo de obsolescencia y candidato a provisión contable`);
-  if (d.faltVal > 0) costos.push(`<strong>${M(d.faltVal)}</strong> en diferencias de inventario no regularizadas`);
-  if (costos.length) {
-    p4 = `<strong>Costo oculto.</strong> Más allá de la exactitud, el diagnóstico identifica capital atrapado y riesgos cuantificables: ` + costos.join('; ') + `. ` ;
-    p4 += `Estos montos representan oportunidades concretas de liberación de caja y reducción de pérdidas si se gestionan con un plan estructurado.`;
-    parrafos.push(p4);
-  }
-
-  // P5 — Implicancia / cierre
-  let p5 = `<strong>Implicancia.</strong> `;
-  p5 += d.score < 65
-    ? `De no mediar acción, estos factores seguirán generando sobrecostos operativos, decisiones erradas y deterioro de capital. La buena noticia es que el ${pctValA}% del valor se concentra en pocos ítems, por lo que un plan focalizado puede generar mejoras visibles en un horizonte de 30 a 90 días.`
-    : `El plan de acción propuesto a continuación prioriza las intervenciones de mayor impacto y menor esfuerzo para consolidar la gestión y capturar las oportunidades identificadas.`;
-  parrafos.push(p5);
-
-  // ── HALLAZGOS CLAVE ──
-  const hallazgos = [];
-  if (d.ira !== null && d.ira < 95) hallazgos.push(`Exactitud de inventario de <strong>${iraTxt}</strong>, bajo el benchmark de 95%.`);
-  if (d.iraA !== null && d.iraA < 99) hallazgos.push(`Exactitud de clase A en <strong>${iraATxt}</strong> (objetivo: ≥99%), el segmento de mayor valor.`);
-  if (d.faltVal > 0) hallazgos.push(`Diferencias no regularizadas por <strong>${M(d.faltVal)}</strong>.`);
-  if (d.agingRisk > 0) hallazgos.push(`<strong>${M(d.agingRisk)}</strong> en stock sobre 180 días (riesgo de obsolescencia).`);
-  if (d.hasSales && d.ovTotal > 0) hallazgos.push(`Sobrestock de <strong>${M(d.ovTotal)}</strong> en capital inmovilizado.`);
-  if (d.quiebres > 0) hallazgos.push(`<strong>${d.quiebres} SKUs en quiebre</strong> de stock (${d.qA} de clase A — venta perdida directa).`);
-  if (d.benchScore < 80) hallazgos.push(`Adherencia a procesos de <strong>${d.benchScore}%</strong>: brechas en controles clave.`);
-  if (hallazgos.length === 0) hallazgos.push('Indicadores dentro de rangos saludables; foco en sostener y optimizar.');
-
-  // ── KPIs ──
-  const kpis = [
-    ['Health Score', d.score+'/100'],
-    ['Exactitud (IRA)', iraTxt],
-    ['Madurez', d.matLevel+'/5'],
-    ['Valor inventario', M(d.totalValue)],
-    ['Stock >180 días', d.agingRisk>0?M(d.agingRisk):'—'],
-    ['Sobrestock', (d.hasSales&&d.ovTotal>0)?M(d.ovTotal):'—'],
-  ];
-
-  // ── PLAN DE ACCIÓN DESARROLLADO (fichas de consultoría) ──
-  // Cada acción: qué, por qué, cómo, impacto esperado, plazo, responsable.
-  const acciones = [];
-  acciones.push({
-    n:1, prio:'Alta', t:'Conteo físico y saneamiento de clase A',
-    why:`${d.abcA.length} SKUs concentran el ${pctValA}% del valor (${M(d.abcAval)})${d.iraA!==null&&d.iraA<99?` con exactitud de solo ${iraATxt}`:''}. Es el capital más relevante y, hoy, el menos confiable.`,
-    how:'Conteo cíclico del 100% de la clase A, ajuste de cada diferencia y registro de su causa raíz. Validación cruzada sistema vs. físico.',
-    impact:`Recuperar control sobre ${M(d.abcAval)}; elevar IRA de clase A hacia ≥95%.`,
-    plazo:'30 días', resp:'Jefe de Bodega + Control de Gestión'
-  });
-  if (d.agingRisk > 0) acciones.push({
-    n:acciones.length+1, prio:'Alta', t:'Plan de obsolescencia y liberación de capital',
-    why:`${M(d.agingRisk)} (${d.agingRiskPct.toFixed(1)}% del stock) supera los 180 días sin movimiento, con riesgo de pérdida total y obligación de provisión contable.`,
-    how:'Clasificar el stock lento, definir destino por SKU (liquidación, retorno a proveedor, promoción o baja contable) y ejecutar con metas mensuales.',
-    impact:`Liberar caja y reducir provisiones; sanear hasta ${M(d.agingRisk)} en activos improductivos.`,
-    plazo:'30–60 días', resp:'Operaciones + Finanzas'
-  });
-  acciones.push({
-    n:acciones.length+1, prio:'Alta', t:'Control de ajustes y proceso de recepción',
-    why:'Las diferencias de inventario suelen originarse en ajustes manuales sin autorización y recepciones sin validación doble.',
-    how:'Activar workflow de aprobación para todo ajuste de stock y exigir verificación contra OC/guía con evidencia digital en cada recepción.',
-    impact:'Atacar la causa raíz de las diferencias; reducción esperada ~60% en descuadres.',
-    plazo:'30 días', resp:'Jefe de Bodega'
-  });
-  acciones.push({
-    n:acciones.length+1, prio:'Media', t:'Conteo cíclico ABC permanente',
-    why:'Un conteo cíclico sostenido evita que la exactitud vuelva a degradarse tras el saneamiento inicial.',
-    how:'Frecuencia diferenciada: clase A mensual, B trimestral, C semestral, con responsable único asignado y calendario formal.',
-    impact:'Sostener la exactitud en el tiempo y anticipar desvíos antes de que escalen.',
-    plazo:'60 días', resp:'Jefe de Bodega'
-  });
-  if (d.hasSales && d.ovTotal > 0) acciones.push({
-    n:acciones.length+1, prio:'Media', t:'Optimización de niveles de stock',
-    why:`Se detecta sobrestock por ${M(d.ovTotal)} en capital inmovilizado, que reduce liquidez y aumenta costos de mantención.`,
-    how:'Revisar puntos de reorden y stock de seguridad por SKU según rotación real; ajustar política de compra para ítems de baja salida.',
-    impact:`Reducción esperada ~25% del sobrestock; mejor uso del capital de trabajo.`,
-    plazo:'60–90 días', resp:'Compras + Planificación'
-  });
-  acciones.push({
-    n:acciones.length+1, prio:'Media', t:'Dashboard de KPIs y gobierno de inventario',
-    why:'Lo que no se mide no se gestiona: sin indicadores visibles, las mejoras no se sostienen.',
-    how:'Implementar tablero mensual con exactitud por clase, aging, cobertura en días y quiebres, con revisión formal en comité de operaciones.',
-    impact:'Visibilidad ejecutiva continua y seguimiento del avance del plan.',
-    plazo:'60 días', resp:'Jefe de Bodega + Gerencia de Operaciones'
-  });
-
-  const prioColor = p => p==='Alta' ? '#EF4444' : p==='Media' ? '#F59E0B' : '#10B981';
-
-  const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
-<title>Resumen Ejecutivo — ${cliente}</title>
-<style>
-  @page { margin: 16mm; }
-  *{box-sizing:border-box;margin:0;padding:0}
-  html{background:#E8ECF1}
-  body{font-family:'Segoe UI',system-ui,Arial,sans-serif;color:#1E293B;line-height:1.6;font-size:12.5px;
-    max-width:820px;margin:0 auto;background:#fff;padding:40px 48px 64px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
-  .re-head{display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #003366;padding-bottom:16px;margin-bottom:20px}
-  .re-head img{height:46px}
-  .re-head .t{text-align:right}
-  .re-head .t h1{font-size:21px;color:#003366;font-weight:800;letter-spacing:-.3px}
-  .re-head .t .s{font-size:10.5px;color:#64748B;text-transform:uppercase;letter-spacing:1.5px}
-  .re-meta{display:flex;gap:32px;font-size:12px;color:#475569;margin-bottom:22px;background:#F8FAFC;padding:10px 16px;border-radius:8px;border:1px solid #E2E8F0}
-  .re-meta strong{color:#003366}
-  h2{font-size:12.5px;text-transform:uppercase;letter-spacing:1px;color:#CFAE58;margin:24px 0 10px;font-weight:800;border-bottom:1px solid #E2E8F0;padding-bottom:5px}
-  .score-box{display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,#003366,#001F3F);color:#fff;border-radius:12px;padding:18px 24px;margin-bottom:14px}
-  .score-num{font-size:44px;font-weight:800;color:${estadoColor};line-height:1}
-  .score-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.7)}
-  .score-est{font-size:18px;font-weight:700;color:${estadoColor}}
-  .narr p{margin:0 0 11px;text-align:justify}
-  .grid2{display:grid;grid-template-columns:1.35fr 1fr;gap:24px;align-items:start}
-  ul{list-style:none}
-  .hall li{padding:6px 0 6px 18px;position:relative;font-size:12px}
-  .hall li::before{content:"▸";position:absolute;left:0;color:#CFAE58;font-weight:800}
-  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .kpi{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:9px 12px}
-  .kpi .k{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:#64748B}
-  .kpi .v{font-size:16px;font-weight:800;color:#003366}
-  .acc{border:1px solid #E2E8F0;border-radius:10px;padding:14px 16px;margin-bottom:12px;page-break-inside:avoid}
-  .acc-h{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-  .acc-n{width:26px;height:26px;border-radius:7px;background:#003366;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0}
-  .acc-t{font-size:14px;font-weight:700;color:#003366;flex:1}
-  .acc-prio{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:3px 9px;border-radius:999px;color:#fff}
-  .acc-row{display:flex;gap:8px;font-size:11.5px;margin:3px 0;line-height:1.5}
-  .acc-row .lbl{font-weight:700;color:#475569;min-width:78px;flex-shrink:0}
-  .acc-meta{display:flex;gap:18px;margin-top:8px;padding-top:8px;border-top:1px dashed #E2E8F0;font-size:11px}
-  .acc-meta span{color:#64748B}.acc-meta strong{color:#003366}
-  .re-foot{margin-top:30px;padding-top:14px;border-top:2px solid #003366;font-size:10px;color:#94A3B8;display:flex;justify-content:space-between}
-  .disc{font-size:9.5px;color:#94A3B8;font-style:italic;margin-top:8px;line-height:1.5}
-  .noprint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#003366;color:#fff;border:none;padding:13px 26px;border-radius:999px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(0,31,63,.3);z-index:99;transition:transform .15s,background .2s}
-  .noprint:hover{background:#001F3F;transform:translateX(-50%) translateY(-2px)}
-  @media print{.noprint{display:none}@page{margin:16mm}body{box-shadow:none;max-width:none;padding:0;margin:0}html{background:#fff}}
-</style></head><body>
-  <button class="noprint" onclick="window.print()">🖨 Descargar / Imprimir PDF</button>
-  <div class="re-head">
-    <img src="${LOGO}" alt="TyrAdvisor" onerror="this.style.display='none'">
-    <div class="t"><h1>Resumen Ejecutivo</h1><div class="s">Inventory Health Check · IHC Tool™</div></div>
-  </div>
-  <div class="re-meta">
-    <div><strong>Preparado para:</strong> ${cliente}</div>
-    ${emisor ? `<div><strong>Preparado por:</strong> ${emisor}</div>` : ''}
-    <div><strong>Fecha:</strong> ${hoy}</div>
-    <div><strong>SKUs:</strong> ${d.totalSKUs.toLocaleString('es-CL')}</div>
-  </div>
-
-  <h2>Diagnóstico general</h2>
-  <div class="score-box">
-    <div><div class="score-num">${d.score}</div><div class="score-lbl">Health Score / 100</div></div>
-    <div><div class="score-est">${estado}</div><div class="score-lbl">Madurez nivel ${d.matLevel}/5 · ${matNames[d.matLevel]||''}</div></div>
-  </div>
-  <div class="narr">${parrafos.map(p=>`<p>${p}</p>`).join('')}</div>
-
-  <div class="grid2">
-    <div>
-      <h2>Hallazgos clave</h2>
-      <ul class="hall">${hallazgos.map(h=>`<li>${h}</li>`).join('')}</ul>
-    </div>
-    <div>
-      <h2>Cifras críticas</h2>
-      <div class="kpis">${kpis.map(k=>`<div class="kpi"><div class="k">${k[0]}</div><div class="v">${k[1]}</div></div>`).join('')}</div>
-    </div>
-  </div>
-
-  <h2>Plan de acción priorizado</h2>
-  ${acciones.map(a=>`<div class="acc">
-    <div class="acc-h">
-      <div class="acc-n">${a.n}</div>
-      <div class="acc-t">${a.t}</div>
-      <span class="acc-prio" style="background:${prioColor(a.prio)}">Prioridad ${a.prio}</span>
-    </div>
-    <div class="acc-row"><span class="lbl">Por qué:</span><span>${a.why}</span></div>
-    <div class="acc-row"><span class="lbl">Qué hacer:</span><span>${a.how}</span></div>
-    <div class="acc-row"><span class="lbl">Impacto:</span><span>${a.impact}</span></div>
-    <div class="acc-meta"><span>⏱ Plazo: <strong>${a.plazo}</strong></span><span>👤 Responsable: <strong>${a.resp}</strong></span></div>
-  </div>`).join('')}
-
-  <div class="re-foot">
-    <span><strong>TyrAdvisor SpA</strong> · contacto@tyradvisor.com · tyradvisor.com</span>
-    <span>Generado por IHC Tool™ · ${hoy}</span>
-  </div>
-  <p class="disc">Este informe se genera automáticamente a partir de los datos cargados por el cliente y tiene carácter de apoyo a la gestión. No constituye asesoría contable, tributaria, financiera ni legal. Las cifras dependen de la calidad de los datos de entrada.</p>
-</body></html>`);
-  win.document.close();
 }
 
 function showError(msg) {
@@ -1611,12 +1455,81 @@ function resetApp() {
   showScreen('upload');
 }
 
+// ─── LOGIN & AUTHENTICATION ───────────────────────────────────────────────
+let isAuthenticated = false;
+
+function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errorEl = document.getElementById('loginError');
+
+  if (!email || !password) {
+    errorEl.textContent = 'Por favor completa ambos campos';
+    return;
+  }
+
+  // Validación simple (en producción, conectar a backend)
+  // Para demostración: cualquier email + password válidos entran
+  if (email.length > 0 && password.length > 0) {
+    // Simulación de validación de licencia
+    // Aquí iría una llamada a API para validar el token/email contra Supabase
+    isAuthenticated = true;
+    sessionStorage.setItem('ihcAuth', JSON.stringify({ email, authenticated: true }));
+    document.getElementById('loginOverlay').style.display = 'none';
+    initializeApp();
+  } else {
+    errorEl.textContent = 'Credenciales inválidas';
+  }
+}
+
+function checkAuthentication() {
+  const stored = sessionStorage.getItem('ihcAuth');
+  if (stored) {
+    const auth = JSON.parse(stored);
+    if (auth.authenticated) {
+      isAuthenticated = true;
+      return true;
+    }
+  }
+  return false;
+}
+
+function showLoginOverlay() {
+  if (!checkAuthentication()) {
+    document.getElementById('loginOverlay').style.display = 'flex';
+  }
+}
+
+// Password toggle
+document.addEventListener('DOMContentLoaded', function() {
+  const toggleBtn = document.getElementById('togglePassword');
+  const passwordInput = document.getElementById('loginPassword');
+
+  if (toggleBtn && passwordInput) {
+    toggleBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+      passwordInput.setAttribute('type', type);
+      toggleBtn.textContent = type === 'password' ? '👁️' : '🙈';
+    });
+  }
+
+  // Allow Enter key to submit login
+  const emailInput = document.getElementById('loginEmail');
+  if (emailInput) {
+    emailInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') handleLogin();
+    });
+  }
+  if (passwordInput) {
+    passwordInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') handleLogin();
+    });
+  }
+});
+
 // ─── BOOTSTRAP PROTECTION ─────────────────────────────────────────────────
 function initializeApp() {
-  // Idempotency guard: prevent double initialization
-  if (window._ihcAppInitialized) return;
-  window._ihcAppInitialized = true;
-
   // Attach event listeners only after license is verified
   document.getElementById('fileInput').addEventListener('change', e => {
     if (e.target.files[0]) parseFile(e.target.files[0]);
@@ -1635,13 +1548,35 @@ function initializeApp() {
   Chart.defaults.color = '#64748B';
 }
 
-// Guarda la función original para que license.js la pueda invocar
-window._ihcOriginalBoot = initializeApp;
+// Show login if not authenticated
+showLoginOverlay();
 
-// La app SOLO se inicializa cuando license.js llama a bootApp()
-// NO hay fallback — license.js debe cargar.
+// Defer initialization until license verification
+if (window.ihcLicense) {
+  if (!isAuthenticated) setTimeout(() => initializeApp(), 500);
+} else {
+  // Fallback: initialize after login or short delay
+  if (isAuthenticated) {
+    initializeApp();
+  } else {
+    setTimeout(() => { if (isAuthenticated) initializeApp(); }, 2000);
+  }
+}
+
+// ─── SUBNAV SMOOTH SCROLL ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.subnav a').forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const id = this.getAttribute('href').substring(1);
+      const target = document.getElementById(id);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+});
 </script>
-
 
 <!-- ══ TYC INJECTION ══════════════════════════════════════════════════════════ -->
 <script>
@@ -1651,13 +1586,17 @@ window._ihcOriginalBoot = initializeApp;
 
   function tryInject() {
     attempts++;
+    // Selector del botón real de login (id definido en license.js → renderLoginOverlay)
     const btn = document.getElementById('ihc-login-btn');
     if (!btn) {
       if (attempts < MAX_ATTEMPTS) setTimeout(tryInject, 250);
       return;
     }
+
+    // Evitar doble inyección
     if (document.getElementById('tycCheck')) return;
 
+    // Bloquear el botón hasta que se acepten los TyC
     btn.classList.add('tyc-locked');
 
     const wrap = document.createElement('div');
@@ -1666,9 +1605,9 @@ window._ihcOriginalBoot = initializeApp;
       <input type="checkbox" id="tycCheck" />
       <label for="tycCheck">
         He leído y acepto los
-        <a href="https://tyradvisor.com/ihc/terminos" target="_blank" rel="noopener">Términos y Condiciones</a>
+        <a href="https://tyradvisor.com/terminos" target="_blank" rel="noopener">Términos y Condiciones</a>
         y la
-        <a href="https://tyradvisor.com/ihc/privacidad" target="_blank" rel="noopener">Política de Privacidad</a>
+        <a href="https://tyradvisor.com/privacidad" target="_blank" rel="noopener">Política de Privacidad</a>
         de IHC Tool™.
       </label>
     `;
@@ -1676,10 +1615,15 @@ window._ihcOriginalBoot = initializeApp;
     btn.parentNode.insertBefore(wrap, btn);
 
     document.getElementById('tycCheck').addEventListener('change', function () {
-      btn.classList.toggle('tyc-locked', !this.checked);
+      if (this.checked) {
+        btn.classList.remove('tyc-locked');
+      } else {
+        btn.classList.add('tyc-locked');
+      }
     });
   }
 
+  // Esperar a que license.js renderice su overlay
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() { setTimeout(tryInject, 500); });
   } else {
